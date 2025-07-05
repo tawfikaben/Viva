@@ -456,16 +456,14 @@
       `;
       
       // Ajouter un badge pour les nouvelles commandes
-      if (Date.now() - data.timestamp < 30000) { // 30 secondes
+      if (Date.now() - data.timestamp < 30000) {
         const badge = document.createElement('div');
         badge.className = 'new-order-badge';
         badge.textContent = '!';
         div.appendChild(badge);
         
-        // Jouer un son pour les nouvelles commandes
         notificationSound.play().catch(e => console.log("Audio playback error:", e));
         
-        // Supprimer le badge après 30 secondes
         setTimeout(() => {
           badge.remove();
         }, 30000);
@@ -479,13 +477,14 @@
           statut: newStatus
         });
         
-        // Jouer un son de confirmation
         statusChangeSound.play().catch(e => console.log("Audio playback error:", e));
       });
       
-      // Écouter le bouton de suppression (SANS CONFIRMATION)
+      // Écouter le bouton de suppression (AVEC CONFIRMATION)
       div.querySelector('.delete-btn')?.addEventListener("click", function() {
-        db.ref("commandes/" + key).remove();
+        if (confirm("Voulez-vous vraiment supprimer cette commande ?")) {
+          db.ref("commandes/" + key).remove();
+        }
       });
       
       return div;
@@ -498,7 +497,6 @@
         const data = snapshot.val();
         const key = snapshot.key;
         
-        // Si la commande n'a pas d'état, définir "En attente" par défaut
         if (!data.etat && !data.statut) {
           db.ref("commandes/" + key).update({ etat: "En attente", statut: "En attente" });
           return;
@@ -506,15 +504,12 @@
         
         const currentStatus = data.etat || data.statut || "En attente";
         
-        // Mettre à jour le compteur
         statusCount[currentStatus]++;
         statusCount['total']++;
         updateStatusCounters();
         
-        // Stocker la commande
         allOrders[key] = { ...data, status: currentStatus };
         
-        // Créer et ajouter l'élément
         const orderElement = createOrderElement(key, data);
         commandesContainer.appendChild(orderElement);
       });
@@ -525,7 +520,6 @@
         const key = snapshot.key;
         const currentStatus = data.etat || data.statut || "En attente";
         
-        // Mettre à jour le compteur si le statut a changé
         if (allOrders[key] && allOrders[key].status !== currentStatus) {
           statusCount[allOrders[key].status]--;
           statusCount[currentStatus]++;
@@ -542,7 +536,6 @@
             select.value = currentStatus;
           }
           
-          // Mettre à jour la classe pour le style
           commandeDiv.className = `commande status-${currentStatus.replace(/\s+/g, '-').toLowerCase()}`;
           commandeDiv.dataset.status = currentStatus;
         }
@@ -553,7 +546,6 @@
         const key = snapshot.key;
         
         if (allOrders[key]) {
-          // Mettre à jour le compteur
           statusCount[allOrders[key].status]--;
           statusCount['total']--;
           updateStatusCounters();
