@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Commandes - Dar Hassna</title>
+  <title>Système de Commandes - Dar Hassna</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -14,76 +14,73 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-    }
-    h1 {
-      color: #d35400;
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .orders-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: 1fr 2fr;
       gap: 20px;
+    }
+    .order-form {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .orders-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      color: #d35400;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    input, select, button {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #d35400;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e67e22;
     }
     .order-card {
       background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 20px;
-      position: relative;
-      border-left: 5px solid #d35400;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-left: 4px solid #d35400;
     }
     .order-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #eee;
+      margin-bottom: 10px;
     }
-    .table-number {
-      font-size: 1.4em;
+    .order-table {
       font-weight: bold;
       color: #d35400;
     }
     .order-time {
-      background-color: #f0f0f0;
-      padding: 5px 10px;
-      border-radius: 20px;
+      color: #777;
       font-size: 0.9em;
-      color: #555;
-    }
-    .order-items {
-      margin: 15px 0;
-    }
-    .order-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .item-name {
-      font-weight: bold;
-    }
-    .item-price {
-      color: #d35400;
-    }
-    .order-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 15px;
-      padding-top: 10px;
-      border-top: 1px dashed #ddd;
-    }
-    .order-total {
-      font-weight: bold;
-      font-size: 1.2em;
     }
     .order-status {
       padding: 5px 10px;
       border-radius: 20px;
       font-size: 0.9em;
       font-weight: bold;
+      display: inline-block;
+      margin: 10px 0;
     }
     .status-pending {
       background-color: #fff3cd;
@@ -101,47 +98,50 @@
       background-color: #e2e3e5;
       color: #383d41;
     }
-    .status-select {
-      width: 100%;
-      padding: 8px;
-      border-radius: 5px;
-      border: 1px solid #ddd;
-      margin-top: 10px;
-      background-color: #f9f9f9;
+    .order-items {
+      margin: 10px 0;
+    }
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
     }
     .delete-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
       background-color: #dc3545;
       color: white;
       border: none;
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
+      padding: 5px 10px;
+      border-radius: 4px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
+      margin-top: 10px;
     }
     .delete-btn:hover {
       background-color: #c82333;
-    }
-    .time-ago {
-      font-size: 0.8em;
-      color: #777;
-      margin-top: 5px;
-      text-align: right;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Commandes en cours - Dar Hassna</h1>
+    <div class="order-form">
+      <h1>Nouvelle Commande</h1>
+      <form id="commandeForm">
+        <input type="text" id="nom" placeholder="Nom du client" required>
+        <input type="number" id="table" placeholder="Numéro de table" min="1" required>
+        <select id="plat" required>
+          <option value="">-- Choisir un plat --</option>
+          <option value="Couscous Royal">Couscous Royal</option>
+          <option value="Tajine de Poulet">Tajine de Poulet</option>
+          <option value="Pastilla">Pastilla</option>
+          <option value="Harira">Harira</option>
+        </select>
+        <input type="number" id="quantite" placeholder="Quantité" min="1" value="1" required>
+        <button type="submit">Envoyer la commande</button>
+      </form>
+    </div>
     
-    <div class="orders-grid" id="ordersContainer">
-      <!-- Les commandes seront ajoutées ici -->
+    <div class="orders-container">
+      <h2>Commandes en cours</h2>
+      <div id="listeCommandes"></div>
     </div>
   </div>
 
@@ -165,123 +165,99 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Fonction pour calculer le temps écoulé
-    function timeAgo(timestamp) {
-      const seconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
+    // Gestion du formulaire de commande
+    document.getElementById('commandeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
       
-      let interval = Math.floor(seconds / 31536000);
-      if (interval >= 1) return `il y a ${interval} an${interval > 1 ? 's' : ''}`;
+      const nom = document.getElementById('nom').value;
+      const table = document.getElementById('table').value;
+      const plat = document.getElementById('plat').value;
+      const quantite = document.getElementById('quantite').value;
       
-      interval = Math.floor(seconds / 2592000);
-      if (interval >= 1) return `il y a ${interval} mois`;
+      // Envoyer la commande à Firebase
+      database.ref("commandes").push({
+        nom: nom,
+        table: table,
+        plat: plat,
+        quantite: quantite,
+        timestamp: Date.now(),
+        etat: "En attente" // Ajout automatique de l'état
+      });
       
-      interval = Math.floor(seconds / 86400);
-      if (interval >= 1) return `il y a ${interval} jour${interval > 1 ? 's' : ''}`;
-      
-      interval = Math.floor(seconds / 3600);
-      if (interval >= 1) return `il y a ${interval} heure${interval > 1 ? 's' : ''}`;
-      
-      interval = Math.floor(seconds / 60);
-      if (interval >= 1) return `il y a ${interval} minute${interval > 1 ? 's' : ''}`;
-      
-      return `à l'instant`;
-    }
-
-    // Fonction pour formater l'heure
-    function formatTime(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    }
+      // Réinitialiser le formulaire
+      document.getElementById('commandeForm').reset();
+      alert('Commande envoyée avec succès!');
+    });
 
     // Afficher les commandes
-    function displayOrders(orders) {
-      const container = document.getElementById('ordersContainer');
+    database.ref("commandes").on('value', (snapshot) => {
+      const commandes = snapshot.val();
+      const container = document.getElementById('listeCommandes');
       container.innerHTML = '';
       
-      if (!orders || Object.keys(orders).length === 0) {
-        container.innerHTML = '<p style="grid-column:1/-1;text-align:center;">Aucune commande pour le moment</p>';
+      if (!commandes) {
+        container.innerHTML = '<p>Aucune commande pour le moment</p>';
         return;
       }
       
-      // Trier les commandes par date (récentes en premier)
-      const ordersArray = Object.entries(orders).map(([key, value]) => ({
+      // Convertir l'objet en tableau et trier par date
+      const commandesArray = Object.entries(commandes).map(([key, value]) => ({
         id: key,
         ...value
       })).sort((a, b) => b.timestamp - a.timestamp);
       
-      ordersArray.forEach(order => {
-        const orderCard = document.createElement('div');
-        orderCard.className = 'order-card';
+      commandesArray.forEach(commande => {
+        const div = document.createElement('div');
+        div.className = 'order-card';
         
         // Déterminer la classe de statut
         let statusClass = 'status-pending';
-        if (order.statut === 'en préparation') statusClass = 'status-preparing';
-        else if (order.statut === 'prêt') statusClass = 'status-ready';
-        else if (order.statut === 'livré') statusClass = 'status-delivered';
+        if (commande.etat === 'En préparation') statusClass = 'status-preparing';
+        else if (commande.etat === 'Prêt') statusClass = 'status-ready';
+        else if (commande.etat === 'Livré') statusClass = 'status-delivered';
         
-        orderCard.innerHTML = `
-          <button class="delete-btn" data-order-id="${order.id}">×</button>
+        div.innerHTML = `
           <div class="order-header">
-            <div class="table-number">Table ${order.table}</div>
-            <div class="order-time">
-              ${formatTime(order.timestamp)}
-              <div class="time-ago">${timeAgo(order.timestamp)}</div>
+            <div class="order-table">Table ${commande.table}</div>
+            <div class="order-time">${new Date(commande.timestamp).toLocaleTimeString()}</div>
+          </div>
+          <div>Client: <strong>${commande.nom}</strong></div>
+          <div class="order-status ${statusClass}">${commande.etat}</div>
+          <div class="order-items">
+            <div class="order-item">
+              <span>${commande.quantite}x ${commande.plat}</span>
             </div>
           </div>
-          
-          <div class="order-items">
-            ${order.commandes.map(item => `
-              <div class="order-item">
-                <div class="item-name">${item.quantite}x ${item.plat}</div>
-                <div class="item-price">${item.prix * item.quantite} MAD</div>
-              </div>
-            `).join('')}
-          </div>
-          
-          <div class="order-footer">
-            <div class="order-total">Total: ${order.total} MAD</div>
-            <div class="order-status ${statusClass}">${order.statut}</div>
-          </div>
-          
-          <select class="status-select" data-order-id="${order.id}">
-            <option value="en attente" ${order.statut === 'en attente' ? 'selected' : ''}>En attente</option>
-            <option value="en préparation" ${order.statut === 'en préparation' ? 'selected' : ''}>En préparation</option>
-            <option value="prêt" ${order.statut === 'prêt' ? 'selected' : ''}>Prêt</option>
-            <option value="livré" ${order.statut === 'livré' ? 'selected' : ''}>Livré</option>
+          <select class="status-select" data-id="${commande.id}">
+            <option value="En attente" ${commande.etat === 'En attente' ? 'selected' : ''}>En attente</option>
+            <option value="En préparation" ${commande.etat === 'En préparation' ? 'selected' : ''}>En préparation</option>
+            <option value="Prêt" ${commande.etat === 'Prêt' ? 'selected' : ''}>Prêt</option>
+            <option value="Livré" ${commande.etat === 'Livré' ? 'selected' : ''}>Livré</option>
           </select>
+          <button class="delete-btn" data-id="${commande.id}">Supprimer</button>
         `;
         
-        container.appendChild(orderCard);
+        container.appendChild(div);
       });
       
-      // Gestion des changements de statut
+      // Gestion du changement de statut
       document.querySelectorAll('.status-select').forEach(select => {
         select.addEventListener('change', function() {
-          const orderId = this.getAttribute('data-order-id');
-          const newStatus = this.value;
-          
-          database.ref(`commandes/${orderId}`).update({
-            statut: newStatus,
-            etat: newStatus // Pour compatibilité
-          });
+          const id = this.getAttribute('data-id');
+          const newEtat = this.value;
+          database.ref(`commandes/${id}`).update({ etat: newEtat });
         });
       });
       
-      // Gestion des suppressions
+      // Gestion de la suppression
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           if (confirm('Supprimer cette commande ?')) {
-            const orderId = this.getAttribute('data-order-id');
-            database.ref(`commandes/${orderId}`).remove();
+            const id = this.getAttribute('data-id');
+            database.ref(`commandes/${id}`).remove();
           }
         });
       });
-    }
-
-    // Charger les commandes
-    database.ref('commandes').on('value', (snapshot) => {
-      const orders = snapshot.val();
-      displayOrders(orders);
     });
   </script>
 </body>
