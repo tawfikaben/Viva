@@ -1,0 +1,44 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Commandes - Cuisine</title>
+</head>
+<body>
+  <h2>Liste des commandes</h2>
+  <div id="liste-commandes"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+  <!-- Configuration Firebase -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpSF4J0bsd6T0ImMpse0KQQRADaxiYUQw",
+      authDomain: "darhassna-484c3.firebaseapp.com",
+      databaseURL: "https://darhassna-484c3-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "darhassna-484c3",
+      storageBucket: "darhassna-484c3.firebasestorage.app",
+      messagingSenderId: "141393162149",
+      appId: "1:141393162149:web:0717227eac221f5ddfc24c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const commandesDiv = document.getElementById("liste-commandes");
+
+    db.ref("commandes").on("child_added", (snapshot) => {
+      const data = snapshot.val();
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>${data.nom}</strong> a commandé : ${data.plat}`;
+      div.style.border = "1px solid #ccc";
+      div.style.margin = "10px";
+      div.style.padding = "10px";
+      commandesDiv.appendChild(div);
+    });
+  </script>
+</body>
+</html>
