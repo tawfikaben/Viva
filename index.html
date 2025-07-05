@@ -2,15 +2,39 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Liste des commandes - Cuisine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de Commandes - Dar Hassna</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
+      background-color: #f8f1e9;
+      margin: 0;
       padding: 20px;
-      background: #f4f4f4;
     }
-    h2 {
-      color: #333;
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+    h1 {
+      color: #d35400;
+      margin: 0;
+    }
+    .clock {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #5d4037;
     }
     .commande {
       background-color: #fff;
@@ -19,22 +43,83 @@
       padding: 15px;
       margin: 10px 0;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: relative;
     }
-    .commande select {
-      margin-top: 8px;
+    .commande-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .table-number {
+      font-weight: bold;
+      color: #d35400;
+      font-size: 1.2em;
+    }
+    .order-time {
+      color: #777;
+      font-size: 0.9em;
+    }
+    .order-items {
+      margin: 10px 0;
+    }
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .item-quantity {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+    .order-status {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #ddd;
+    }
+    .status-select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      margin-top: 5px;
+    }
+    .status-pending { color: #856404; }
+    .status-preparing { color: #004085; }
+    .status-ready { color: #155724; }
+    .status-delivered { color: #383d41; }
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+    .delete-btn:hover {
+      background-color: #c82333;
     }
   </style>
 </head>
 <body>
-  <h2>📋 Commandes en temps réel</h2>
-  <div id="liste-commandes"></div>
+  <div class="container">
+    <div class="header">
+      <h1>Commandes - Dar Hassna</h1>
+      <div class="clock" id="liveClock"></div>
+    </div>
+    
+    <div id="liste-commandes"></div>
+  </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-  <!-- Configuration Firebase -->
   <script>
+    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDpSF4J0bsd6T0ImMpse0KQQRADaxiYUQw",
       authDomain: "darhassna-484c3.firebaseapp.com",
@@ -45,35 +130,107 @@
       appId: "1:141393162149:web:0717227eac221f5ddfc24c"
     };
 
+    // Initialiser Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const commandesDiv = document.getElementById("liste-commandes");
 
+    // Fonction pour mettre à jour l'horloge
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const dateString = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('liveClock').innerHTML = `${dateString}<br>${timeString}`;
+    }
+
+    // Mettre à jour l'horloge chaque seconde
+    setInterval(updateClock, 1000);
+    updateClock(); // Appel initial
+
+    // Fonction pour formater la date
+    function formatOrderTime(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Écouter les nouvelles commandes et les modifications
     db.ref("commandes").on("child_added", (snapshot) => {
       const data = snapshot.val();
       const key = snapshot.key;
 
       const div = document.createElement("div");
       div.className = "commande";
+      div.id = `commande-${key}`;
+      
       div.innerHTML = `
-        <strong>${data.nom}</strong> a commandé : <em>${data.plat}</em><br>
-        🕒 ${new Date(data.timestamp).toLocaleTimeString()}<br>
-        <label for="etat-${key}">État :</label>
-        <select id="etat-${key}">
-          <option value="En attente" ${data.etat === "En attente" ? "selected" : ""}>🕐 En attente</option>
-          <option value="En préparation" ${data.etat === "En préparation" ? "selected" : ""}>👨‍🍳 En préparation</option>
-          <option value="Prêt" ${data.etat === "Prêt" ? "selected" : ""}>✅ Prêt</option>
-          <option value="Livré" ${data.etat === "Livré" ? "selected" : ""}>🛵 Livré</option>
-        </select>
+        <button class="delete-btn" data-key="${key}">×</button>
+        <div class="commande-header">
+          <div class="table-number">Table ${data.table}</div>
+          <div class="order-time">${formatOrderTime(data.timestamp)}</div>
+        </div>
+        
+        <div class="order-items">
+          ${data.commandes.map(item => `
+            <div class="order-item">
+              <div>
+                <span class="item-quantity">${item.quantite}x</span>
+                ${item.plat}
+              </div>
+              <div>${item.prix * item.quantite} MAD</div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="order-total">Total: ${data.total} MAD</div>
+        
+        <div class="order-status">
+          <label>État :</label>
+          <select class="status-select" data-key="${key}">
+            <option value="en attente" ${data.statut === "en attente" ? "selected" : ""}>🕐 En attente</option>
+            <option value="en préparation" ${data.statut === "en préparation" ? "selected" : ""}>👨‍🍳 En préparation</option>
+            <option value="prêt" ${data.statut === "prêt" ? "selected" : ""}>✅ Prêt</option>
+            <option value="livré" ${data.statut === "livré" ? "selected" : ""}>🛵 Livré</option>
+          </select>
+        </div>
       `;
 
-      // عندما يتم تغيير الحالة
-      div.querySelector(`#etat-${key}`).addEventListener("change", function () {
-        const nouvelleEtat = this.value;
-        db.ref("commandes/" + key).update({ etat: nouvelleEtat });
+      // Écouter les changements d'état
+      div.querySelector('.status-select').addEventListener("change", function() {
+        const newStatus = this.value;
+        db.ref("commandes/" + key).update({ statut: newStatus });
+      });
+
+      // Écouter le bouton de suppression
+      div.querySelector('.delete-btn').addEventListener("click", function() {
+        if (confirm("Voulez-vous vraiment supprimer cette commande ?")) {
+          db.ref("commandes/" + key).remove();
+        }
       });
 
       commandesDiv.appendChild(div);
+    });
+
+    // Écouter les modifications des commandes existantes
+    db.ref("commandes").on("child_changed", (snapshot) => {
+      const data = snapshot.val();
+      const key = snapshot.key;
+      const commandeDiv = document.getElementById(`commande-${key}`);
+      
+      if (commandeDiv) {
+        const select = commandeDiv.querySelector('.status-select');
+        if (select) {
+          select.value = data.statut;
+        }
+      }
+    });
+
+    // Écouter les suppressions de commandes
+    db.ref("commandes").on("child_removed", (snapshot) => {
+      const key = snapshot.key;
+      const commandeDiv = document.getElementById(`commande-${key}`);
+      if (commandeDiv) {
+        commandeDiv.remove();
+      }
     });
   </script>
 </body>
