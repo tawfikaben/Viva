@@ -5,181 +5,110 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Commandes - Dar Hassna</title>
   <style>
-    :root {
-      --primary-color: #d35400;
-      --secondary-color: #5d4037;
-      --light-bg: #f8f1e9;
-      --card-bg: #ffffff;
-      --border-color: #e0e0e0;
-      --pending-color: #fff3cd;
-      --preparing-color: #cce5ff;
-      --ready-color: #d4edda;
-      --delivered-color: #e2e3e5;
-    }
-    
     body {
       font-family: 'Arial', sans-serif;
-      background-color: var(--light-bg);
+      background-color: #f5f5f5;
       margin: 0;
       padding: 20px;
-      color: var(--secondary-color);
     }
-    
     .container {
       max-width: 1200px;
       margin: 0 auto;
     }
-    
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border-color);
-    }
-    
     h1 {
-      color: var(--primary-color);
-      margin: 0;
+      color: #d35400;
+      text-align: center;
+      margin-bottom: 30px;
     }
-    
-    .date-filter {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    
-    .date-filter button {
-      padding: 8px 15px;
-      background-color: white;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    
-    .date-filter button.active {
-      background-color: var(--primary-color);
-      color: white;
-      border-color: var(--primary-color);
-    }
-    
-    .orders-by-date {
-      display: flex;
-      flex-direction: column;
-      gap: 30px;
-    }
-    
-    .date-section {
-      background-color: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .date-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border-color);
-    }
-    
-    .date-title {
-      font-size: 1.2em;
-      font-weight: bold;
-      color: var(--primary-color);
-    }
-    
     .orders-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
     }
-    
     .order-card {
-      background-color: var(--card-bg);
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      border-top: 4px solid var(--primary-color);
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 20px;
       position: relative;
+      border-left: 5px solid #d35400;
     }
-    
     .order-header {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
     }
-    
     .table-number {
+      font-size: 1.4em;
       font-weight: bold;
-      font-size: 1.1em;
-      color: var(--primary-color);
+      color: #d35400;
     }
-    
     .order-time {
-      color: #777;
+      background-color: #f0f0f0;
+      padding: 5px 10px;
+      border-radius: 20px;
       font-size: 0.9em;
+      color: #555;
     }
-    
     .order-items {
-      margin: 10px 0;
+      margin: 15px 0;
     }
-    
     .order-item {
       display: flex;
       justify-content: space-between;
       margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px dashed var(--border-color);
     }
-    
     .item-name {
+      font-weight: bold;
+    }
+    .item-price {
+      color: #d35400;
+    }
+    .order-footer {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-    }
-    
-    .item-quantity {
-      font-weight: bold;
-      margin-right: 8px;
-      color: var(--primary-color);
-    }
-    
-    .order-total {
-      text-align: right;
-      font-weight: bold;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border-color);
-    }
-    
-    .order-status {
       margin-top: 15px;
+      padding-top: 10px;
+      border-top: 1px dashed #ddd;
     }
-    
-    .status-badge {
-      display: inline-block;
+    .order-total {
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    .order-status {
       padding: 5px 10px;
       border-radius: 20px;
-      font-size: 0.8em;
+      font-size: 0.9em;
       font-weight: bold;
     }
-    
-    .status-pending { background-color: var(--pending-color); color: #856404; }
-    .status-preparing { background-color: var(--preparing-color); color: #004085; }
-    .status-ready { background-color: var(--ready-color); color: #155724; }
-    .status-delivered { background-color: var(--delivered-color); color: #383d41; }
-    
+    .status-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .status-preparing {
+      background-color: #cce5ff;
+      color: #004085;
+    }
+    .status-ready {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .status-delivered {
+      background-color: #e2e3e5;
+      color: #383d41;
+    }
     .status-select {
       width: 100%;
       padding: 8px;
-      border-radius: 4px;
-      border: 1px solid var(--border-color);
-      margin-top: 8px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      margin-top: 10px;
+      background-color: #f9f9f9;
     }
-    
     .delete-btn {
       position: absolute;
       top: 10px;
@@ -190,36 +119,29 @@
       width: 25px;
       height: 25px;
       border-radius: 50%;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      font-size: 0.9em;
+      font-size: 14px;
     }
-    
-    .no-orders {
-      text-align: center;
-      padding: 30px;
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+    .time-ago {
+      font-size: 0.8em;
       color: #777;
+      margin-top: 5px;
+      text-align: right;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>Commandes - Dar Hassna</h1>
-      <div id="current-date"></div>
-    </header>
+    <h1>Commandes en cours - Dar Hassna</h1>
     
-    <div class="date-filter">
-      <button class="active" data-filter="today">Aujourd'hui</button>
-      <button data-filter="week">Cette semaine</button>
-      <button data-filter="month">Ce mois</button>
-      <button data-filter="all">Toutes</button>
-    </div>
-    
-    <div class="orders-by-date" id="orders-container">
-      <!-- Les commandes seront ajoutées ici dynamiquement -->
+    <div class="orders-grid" id="ordersContainer">
+      <!-- Les commandes seront ajoutées ici -->
     </div>
   </div>
 
@@ -241,207 +163,125 @@
 
     // Initialiser Firebase
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const ordersRef = db.ref("commandes");
+    const database = firebase.database();
 
-    // Afficher la date actuelle
-    function updateCurrentDate() {
-      const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById('current-date').textContent = now.toLocaleDateString('fr-FR', options);
+    // Fonction pour calculer le temps écoulé
+    function timeAgo(timestamp) {
+      const seconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
+      
+      let interval = Math.floor(seconds / 31536000);
+      if (interval >= 1) return `il y a ${interval} an${interval > 1 ? 's' : ''}`;
+      
+      interval = Math.floor(seconds / 2592000);
+      if (interval >= 1) return `il y a ${interval} mois`;
+      
+      interval = Math.floor(seconds / 86400);
+      if (interval >= 1) return `il y a ${interval} jour${interval > 1 ? 's' : ''}`;
+      
+      interval = Math.floor(seconds / 3600);
+      if (interval >= 1) return `il y a ${interval} heure${interval > 1 ? 's' : ''}`;
+      
+      interval = Math.floor(seconds / 60);
+      if (interval >= 1) return `il y a ${interval} minute${interval > 1 ? 's' : ''}`;
+      
+      return `à l'instant`;
     }
-    updateCurrentDate();
 
-    // Formater la date pour l'affichage
-    function formatDate(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-    }
-
-    // Formater l'heure
+    // Fonction pour formater l'heure
     function formatTime(timestamp) {
       const date = new Date(timestamp);
       return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    // Grouper les commandes par date
-    function groupOrdersByDate(orders) {
-      const grouped = {};
-      
-      orders.forEach(order => {
-        const orderDate = new Date(order.timestamp);
-        const dateKey = orderDate.toLocaleDateString('fr-FR');
-        
-        if (!grouped[dateKey]) {
-          grouped[dateKey] = {
-            date: order.timestamp,
-            orders: []
-          };
-        }
-        
-        grouped[dateKey].orders.push(order);
-      });
-      
-      return grouped;
-    }
-
     // Afficher les commandes
     function displayOrders(orders) {
-      const container = document.getElementById('orders-container');
+      const container = document.getElementById('ordersContainer');
       container.innerHTML = '';
       
-      if (!orders || orders.length === 0) {
-        container.innerHTML = '<div class="no-orders">Aucune commande trouvée</div>';
+      if (!orders || Object.keys(orders).length === 0) {
+        container.innerHTML = '<p style="grid-column:1/-1;text-align:center;">Aucune commande pour le moment</p>';
         return;
       }
       
-      // Trier les commandes par date (du plus récent au plus ancien)
-      orders.sort((a, b) => b.timestamp - a.timestamp);
+      // Trier les commandes par date (récentes en premier)
+      const ordersArray = Object.entries(orders).map(([key, value]) => ({
+        id: key,
+        ...value
+      })).sort((a, b) => b.timestamp - a.timestamp);
       
-      // Grouper par date
-      const groupedOrders = groupOrdersByDate(orders);
-      
-      // Afficher par section de date
-      for (const [dateKey, group] of Object.entries(groupedOrders)) {
-        const dateSection = document.createElement('div');
-        dateSection.className = 'date-section';
+      ordersArray.forEach(order => {
+        const orderCard = document.createElement('div');
+        orderCard.className = 'order-card';
         
-        dateSection.innerHTML = `
-          <div class="date-header">
-            <div class="date-title">${formatDate(group.date)}</div>
-          </div>
-          <div class="orders-grid">
-            ${group.orders.map(order => createOrderCard(order)).join('')}
-          </div>
-        `;
+        // Déterminer la classe de statut
+        let statusClass = 'status-pending';
+        if (order.statut === 'en préparation') statusClass = 'status-preparing';
+        else if (order.statut === 'prêt') statusClass = 'status-ready';
+        else if (order.statut === 'livré') statusClass = 'status-delivered';
         
-        container.appendChild(dateSection);
-      }
-    }
-
-    // Créer une carte de commande
-    function createOrderCard(order) {
-      // Si pas de statut, on met "En attente" par défaut
-      if (!order.etat && !order.statut) {
-        db.ref("commandes/" + order.id).update({ etat: "En attente", statut: "En attente" });
-        order.etat = "En attente";
-        order.statut = "En attente";
-      }
-      
-      const status = order.etat || order.statut || "En attente";
-      const statusClass = `status-${status.toLowerCase().replace('é', 'e').replace(' ', '-')}`;
-      
-      return `
-        <div class="order-card" id="order-${order.id}">
-          <button class="delete-btn" data-key="${order.id}">×</button>
-          
+        orderCard.innerHTML = `
+          <button class="delete-btn" data-order-id="${order.id}">×</button>
           <div class="order-header">
             <div class="table-number">Table ${order.table}</div>
-            <div class="order-time">${formatTime(order.timestamp)}</div>
+            <div class="order-time">
+              ${formatTime(order.timestamp)}
+              <div class="time-ago">${timeAgo(order.timestamp)}</div>
+            </div>
           </div>
           
           <div class="order-items">
             ${order.commandes.map(item => `
               <div class="order-item">
-                <div class="item-name">
-                  <span class="item-quantity">${item.quantite}x</span>
-                  ${item.plat}
-                </div>
-                <div>${item.prix * item.quantite} MAD</div>
+                <div class="item-name">${item.quantite}x ${item.plat}</div>
+                <div class="item-price">${item.prix * item.quantite} MAD</div>
               </div>
             `).join('')}
           </div>
           
-          <div class="order-total">Total: ${order.total} MAD</div>
-          
-          <div class="order-status">
-            <div class="status-badge ${statusClass}">${status}</div>
-            <select class="status-select" data-key="${order.id}">
-              <option value="En attente" ${status === "En attente" ? "selected" : ""}>En attente</option>
-              <option value="En préparation" ${status === "En préparation" ? "selected" : ""}>En préparation</option>
-              <option value="Prêt" ${status === "Prêt" ? "selected" : ""}>Prêt</option>
-              <option value="Livré" ${status === "Livré" ? "selected" : ""}>Livré</option>
-            </select>
+          <div class="order-footer">
+            <div class="order-total">Total: ${order.total} MAD</div>
+            <div class="order-status ${statusClass}">${order.statut}</div>
           </div>
-        </div>
-      `;
-    }
-
-    // Filtrer les commandes par date
-    function filterOrders(filter) {
-      const now = new Date();
-      let startDate;
+          
+          <select class="status-select" data-order-id="${order.id}">
+            <option value="en attente" ${order.statut === 'en attente' ? 'selected' : ''}>En attente</option>
+            <option value="en préparation" ${order.statut === 'en préparation' ? 'selected' : ''}>En préparation</option>
+            <option value="prêt" ${order.statut === 'prêt' ? 'selected' : ''}>Prêt</option>
+            <option value="livré" ${order.statut === 'livré' ? 'selected' : ''}>Livré</option>
+          </select>
+        `;
+        
+        container.appendChild(orderCard);
+      });
       
-      switch(filter) {
-        case 'today':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          break;
-        case 'week':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-          break;
-        case 'month':
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          break;
-        default: // 'all'
-          startDate = null;
-      }
+      // Gestion des changements de statut
+      document.querySelectorAll('.status-select').forEach(select => {
+        select.addEventListener('change', function() {
+          const orderId = this.getAttribute('data-order-id');
+          const newStatus = this.value;
+          
+          database.ref(`commandes/${orderId}`).update({
+            statut: newStatus,
+            etat: newStatus // Pour compatibilité
+          });
+        });
+      });
       
-      if (!allOrders) return;
-      
-      const filtered = startDate 
-        ? allOrders.filter(order => new Date(order.timestamp) >= startDate)
-        : allOrders;
-      
-      displayOrders(filtered);
+      // Gestion des suppressions
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (confirm('Supprimer cette commande ?')) {
+            const orderId = this.getAttribute('data-order-id');
+            database.ref(`commandes/${orderId}`).remove();
+          }
+        });
+      });
     }
 
     // Charger les commandes
-    let allOrders = [];
-    ordersRef.on('value', (snapshot) => {
+    database.ref('commandes').on('value', (snapshot) => {
       const orders = snapshot.val();
-      
-      if (orders) {
-        allOrders = Object.entries(orders).map(([key, value]) => ({
-          id: key,
-          ...value
-        }));
-        
-        filterOrders(document.querySelector('.date-filter button.active').dataset.filter);
-      } else {
-        displayOrders([]);
-      }
-    });
-
-    // Gestion des filtres de date
-    document.querySelectorAll('.date-filter button').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.date-filter button').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        filterOrders(this.dataset.filter);
-      });
-    });
-
-    // Déléguer les événements pour les éléments dynamiques
-    document.addEventListener('click', function(e) {
-      // Suppression de commande
-      if (e.target.classList.contains('delete-btn')) {
-        if (confirm('Voulez-vous vraiment supprimer cette commande ?')) {
-          const key = e.target.dataset.key;
-          db.ref("commandes/" + key).remove();
-        }
-      }
-    });
-
-    document.addEventListener('change', function(e) {
-      // Changement de statut
-      if (e.target.classList.contains('status-select')) {
-        const key = e.target.dataset.key;
-        const newStatus = e.target.value;
-        db.ref("commandes/" + key).update({ 
-          etat: newStatus,
-          statut: newStatus
-        });
-      }
+      displayOrders(orders);
     });
   </script>
 </body>
