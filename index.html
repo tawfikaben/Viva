@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Système de Commandes - Dar Hassna</title>
+  <title>Gestion des Commandes - Dar Hassna</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
-      background-color: #f5f5f5;
+      background-color: #f8f8f8;
       margin: 0;
       padding: 20px;
     }
@@ -15,23 +15,18 @@
       max-width: 1200px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1fr 2fr;
+      grid-template-columns: 350px 1fr;
       gap: 20px;
     }
-    .order-form {
+    .form-section, .orders-section {
       background-color: white;
       padding: 20px;
       border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .orders-container {
-      background-color: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     h1, h2 {
       color: #d35400;
+      margin-top: 0;
     }
     form {
       display: flex;
@@ -39,9 +34,9 @@
       gap: 15px;
     }
     input, select, button {
-      padding: 10px;
+      padding: 12px;
       border: 1px solid #ddd;
-      border-radius: 5px;
+      border-radius: 6px;
       font-size: 16px;
     }
     button {
@@ -49,6 +44,7 @@
       color: white;
       border: none;
       cursor: pointer;
+      transition: background-color 0.3s;
     }
     button:hover {
       background-color: #e67e22;
@@ -56,90 +52,106 @@
     .order-card {
       background-color: white;
       border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      border-left: 4px solid #d35400;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 5px solid #d35400;
+      position: relative;
     }
     .order-header {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
-    .order-table {
+    .customer-info {
       font-weight: bold;
+      color: #333;
+    }
+    .table-number {
       color: #d35400;
+      font-weight: bold;
     }
     .order-time {
       color: #777;
       font-size: 0.9em;
     }
     .order-status {
-      padding: 5px 10px;
+      display: inline-block;
+      padding: 5px 12px;
       border-radius: 20px;
       font-size: 0.9em;
       font-weight: bold;
-      display: inline-block;
       margin: 10px 0;
     }
-    .status-pending {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-    .status-preparing {
-      background-color: #cce5ff;
-      color: #004085;
-    }
-    .status-ready {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    .status-delivered {
-      background-color: #e2e3e5;
-      color: #383d41;
-    }
+    .status-pending { background-color: #fff3cd; color: #856404; }
+    .status-preparing { background-color: #cce5ff; color: #004085; }
+    .status-ready { background-color: #d4edda; color: #155724; }
+    .status-delivered { background-color: #e2e3e5; color: #383d41; }
     .order-items {
-      margin: 10px 0;
+      margin: 15px 0;
     }
     .order-item {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed #eee;
+    }
+    .item-name {
+      font-weight: bold;
+    }
+    .item-quantity {
+      color: #777;
+    }
+    .order-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .status-select {
+      flex-grow: 1;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
     }
     .delete-btn {
       background-color: #dc3545;
       color: white;
       border: none;
-      padding: 5px 10px;
-      border-radius: 4px;
+      padding: 8px 15px;
+      border-radius: 5px;
       cursor: pointer;
-      margin-top: 10px;
     }
     .delete-btn:hover {
       background-color: #c82333;
+    }
+    .no-orders {
+      text-align: center;
+      color: #777;
+      padding: 20px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="order-form">
+    <div class="form-section">
       <h1>Nouvelle Commande</h1>
       <form id="commandeForm">
-        <input type="text" id="nom" placeholder="Nom du client" required>
-        <input type="number" id="table" placeholder="Numéro de table" min="1" required>
-        <select id="plat" required>
-          <option value="">-- Choisir un plat --</option>
-          <option value="Couscous Royal">Couscous Royal</option>
-          <option value="Tajine de Poulet">Tajine de Poulet</option>
-          <option value="Pastilla">Pastilla</option>
-          <option value="Harira">Harira</option>
+        <input type="text" id="nomClient" placeholder="Nom du client" required>
+        <input type="number" id="numeroTable" placeholder="Numéro de table" min="1" required>
+        <select id="platSelection" required>
+          <option value="">-- Sélectionner un plat --</option>
+          <option value="Couscous Royal">Couscous Royal - 85 MAD</option>
+          <option value="Tajine de Poulet">Tajine de Poulet - 75 MAD</option>
+          <option value="Pastilla">Pastilla - 90 MAD</option>
+          <option value="Harira">Harira - 35 MAD</option>
         </select>
-        <input type="number" id="quantite" placeholder="Quantité" min="1" value="1" required>
-        <button type="submit">Envoyer la commande</button>
+        <input type="number" id="quantitePlat" placeholder="Quantité" min="1" value="1" required>
+        <button type="submit">Enregistrer</button>
       </form>
     </div>
     
-    <div class="orders-container">
+    <div class="orders-section">
       <h2>Commandes en cours</h2>
       <div id="listeCommandes"></div>
     </div>
@@ -165,52 +177,57 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Gestion du formulaire de commande
+    // Envoyer une nouvelle commande
     document.getElementById('commandeForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
-      const nom = document.getElementById('nom').value;
-      const table = document.getElementById('table').value;
-      const plat = document.getElementById('plat').value;
-      const quantite = document.getElementById('quantite').value;
+      const nomClient = document.getElementById('nomClient').value;
+      const numeroTable = document.getElementById('numeroTable').value;
+      const platSelection = document.getElementById('platSelection').value;
+      const quantitePlat = document.getElementById('quantitePlat').value;
       
       // Envoyer la commande à Firebase
       database.ref("commandes").push({
-        nom: nom,
-        table: table,
-        plat: plat,
-        quantite: quantite,
+        nom: nomClient,
+        table: numeroTable,
+        plat: platSelection,
+        quantite: quantitePlat,
         timestamp: Date.now(),
-        etat: "En attente" // Ajout automatique de l'état
+        etat: "En attente" // État ajouté automatiquement
       });
       
       // Réinitialiser le formulaire
-      document.getElementById('commandeForm').reset();
-      alert('Commande envoyée avec succès!');
+      this.reset();
     });
 
-    // Afficher les commandes
+    // Afficher et gérer les commandes
     database.ref("commandes").on('value', (snapshot) => {
       const commandes = snapshot.val();
       const container = document.getElementById('listeCommandes');
       container.innerHTML = '';
       
       if (!commandes) {
-        container.innerHTML = '<p>Aucune commande pour le moment</p>';
+        container.innerHTML = '<div class="no-orders">Aucune commande pour le moment</div>';
         return;
       }
       
-      // Convertir l'objet en tableau et trier par date
+      // Convertir en tableau et trier par date (récent en premier)
       const commandesArray = Object.entries(commandes).map(([key, value]) => ({
         id: key,
         ...value
       })).sort((a, b) => b.timestamp - a.timestamp);
       
       commandesArray.forEach(commande => {
+        // التحقق التلقائي من الحالة وإضافتها إذا كانت مفقودة
+        if (!commande.etat) {
+          database.ref("commandes/" + commande.id).update({ etat: "En attente" });
+          return; // نخرج من الدالة لأن البيانات ستُحدث تلقائياً
+        }
+        
         const div = document.createElement('div');
         div.className = 'order-card';
         
-        // Déterminer la classe de statut
+        // تحديد فئة الحالة
         let statusClass = 'status-pending';
         if (commande.etat === 'En préparation') statusClass = 'status-preparing';
         else if (commande.etat === 'Prêt') statusClass = 'status-ready';
@@ -218,43 +235,51 @@
         
         div.innerHTML = `
           <div class="order-header">
-            <div class="order-table">Table ${commande.table}</div>
-            <div class="order-time">${new Date(commande.timestamp).toLocaleTimeString()}</div>
+            <div>
+              <span class="customer-info">${commande.nom}</span>
+              <span class="table-number"> (Table ${commande.table})</span>
+            </div>
+            <div class="order-time">${new Date(commande.timestamp).toLocaleString('fr-FR')}</div>
           </div>
-          <div>Client: <strong>${commande.nom}</strong></div>
+          
           <div class="order-status ${statusClass}">${commande.etat}</div>
+          
           <div class="order-items">
             <div class="order-item">
-              <span>${commande.quantite}x ${commande.plat}</span>
+              <span class="item-name">${commande.plat}</span>
+              <span class="item-quantity">${commande.quantite}x</span>
             </div>
           </div>
-          <select class="status-select" data-id="${commande.id}">
-            <option value="En attente" ${commande.etat === 'En attente' ? 'selected' : ''}>En attente</option>
-            <option value="En préparation" ${commande.etat === 'En préparation' ? 'selected' : ''}>En préparation</option>
-            <option value="Prêt" ${commande.etat === 'Prêt' ? 'selected' : ''}>Prêt</option>
-            <option value="Livré" ${commande.etat === 'Livré' ? 'selected' : ''}>Livré</option>
-          </select>
-          <button class="delete-btn" data-id="${commande.id}">Supprimer</button>
+          
+          <div class="order-actions">
+            <select class="status-select" data-id="${commande.id}">
+              <option value="En attente" ${commande.etat === 'En attente' ? 'selected' : ''}>En attente</option>
+              <option value="En préparation" ${commande.etat === 'En préparation' ? 'selected' : ''}>En préparation</option>
+              <option value="Prêt" ${commande.etat === 'Prêt' ? 'selected' : ''}>Prêt</option>
+              <option value="Livré" ${commande.etat === 'Livré' ? 'selected' : ''}>Livré</option>
+            </select>
+            <button class="delete-btn" data-id="${commande.id}">Supprimer</button>
+          </div>
         `;
         
         container.appendChild(div);
       });
       
-      // Gestion du changement de statut
+      // إدارة تغيير الحالة
       document.querySelectorAll('.status-select').forEach(select => {
         select.addEventListener('change', function() {
-          const id = this.getAttribute('data-id');
-          const newEtat = this.value;
-          database.ref(`commandes/${id}`).update({ etat: newEtat });
+          const commandeId = this.getAttribute('data-id');
+          const nouvelEtat = this.value;
+          database.ref("commandes/" + commandeId).update({ etat: nouvelEtat });
         });
       });
       
-      // Gestion de la suppression
+      // إدارة حذف الطلبات
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-          if (confirm('Supprimer cette commande ?')) {
-            const id = this.getAttribute('data-id');
-            database.ref(`commandes/${id}`).remove();
+          if (confirm('Voulez-vous vraiment supprimer cette commande ?')) {
+            const commandeId = this.getAttribute('data-id');
+            database.ref("commandes/" + commandeId).remove();
           }
         });
       });
