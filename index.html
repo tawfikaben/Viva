@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Administration - Dar Hassna</title>
+  <title>Tableau de Bord - Dar Hassna</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -24,39 +24,38 @@
       text-align: center;
       margin-bottom: 30px;
     }
-    .commandes-container {
-      display: flex;
-      flex-wrap: wrap;
+    .orders-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
       gap: 20px;
     }
-    .commande-card {
+    .order-card {
       background-color: #fff;
-      border: 1px solid #ddd;
       border-radius: 8px;
       padding: 15px;
-      width: 300px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-left: 4px solid #d35400;
     }
-    .commande-header {
+    .order-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 10px;
       margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
     }
-    .table-num {
+    .order-table {
       font-weight: bold;
       font-size: 1.2em;
       color: #d35400;
     }
-    .commande-time {
-      font-size: 0.8em;
+    .order-time {
       color: #777;
+      font-size: 0.9em;
     }
-    .commande-status {
-      padding: 3px 8px;
-      border-radius: 4px;
+    .order-status {
+      padding: 5px 10px;
+      border-radius: 20px;
       font-size: 0.8em;
       font-weight: bold;
     }
@@ -72,66 +71,63 @@
       background-color: #d4edda;
       color: #155724;
     }
-    .commande-items {
-      margin-top: 10px;
+    .status-delivered {
+      background-color: #e2e3e5;
+      color: #383d41;
     }
-    .commande-item {
+    .order-items {
+      margin: 10px 0;
+    }
+    .order-item {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px dashed #eee;
+      margin-bottom: 5px;
     }
     .item-quantity {
       font-weight: bold;
       margin-right: 5px;
     }
-    .commande-total {
-      font-weight: bold;
+    .order-total {
       text-align: right;
+      font-weight: bold;
       margin-top: 10px;
+      font-size: 1.1em;
+      border-top: 1px dashed #ddd;
       padding-top: 10px;
-      border-top: 1px solid #eee;
     }
-    .commande-actions {
-      margin-top: 15px;
+    .order-actions {
       display: flex;
       justify-content: space-between;
+      margin-top: 15px;
     }
-    .action-btn {
-      padding: 5px 10px;
-      border: none;
+    .status-select {
+      padding: 5px;
       border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
+      border: 1px solid #ddd;
     }
-    .prepare-btn {
-      background-color: #ffc107;
-      color: #856404;
-    }
-    .ready-btn {
-      background-color: #28a745;
-      color: white;
-    }
-    .complete-btn {
-      background-color: #17a2b8;
-      color: white;
-    }
-    .filter-container {
-      margin-bottom: 20px;
-      display: flex;
-      gap: 10px;
-    }
-    .filter-btn {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background-color: #e9ecef;
-    }
-    .filter-btn.active {
+    .update-btn {
       background-color: #d35400;
       color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .update-btn:hover {
+      background-color: #e67e22;
+    }
+    .refresh-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .refresh-btn:hover {
+      background-color: #2980b9;
     }
   </style>
 </head>
@@ -139,14 +135,9 @@
   <div class="container">
     <h1>Commandes en Cours - Dar Hassna</h1>
     
-    <div class="filter-container">
-      <button class="filter-btn active" data-status="all">Toutes</button>
-      <button class="filter-btn" data-status="pending">En attente</button>
-      <button class="filter-btn" data-status="preparing">En préparation</button>
-      <button class="filter-btn" data-status="ready">Prêtes</button>
-    </div>
+    <button class="refresh-btn" id="refreshBtn">Actualiser les Commandes</button>
     
-    <div class="commandes-container" id="commandesList">
+    <div class="orders-container" id="ordersContainer">
       <!-- Les commandes seront ajoutées ici dynamiquement -->
     </div>
   </div>
@@ -156,7 +147,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // Configuration Firebase (identique à la page de commande)
+    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDpSF4J0bsd6T0ImMpse0KQQRADaxiYUQw",
       authDomain: "darhassna-484c3.firebaseapp.com",
@@ -172,115 +163,120 @@
     const database = firebase.database();
 
     // Référence à la base de données
-    const commandesRef = database.ref('commandes');
-    
-    // Écouter les nouvelles commandes et les modifications
-    commandesRef.on('value', (snapshot) => {
-      const commandesList = document.getElementById('commandesList');
-      commandesList.innerHTML = '';
+    const ordersRef = database.ref('commandes');
+
+    // Fonction pour formater la date
+    function formatDate(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('fr-FR') + ' ' + date.toLocaleDateString('fr-FR');
+    }
+
+    // Fonction pour afficher les commandes
+    function displayOrders(orders) {
+      const container = document.getElementById('ordersContainer');
+      container.innerHTML = '';
       
-      snapshot.forEach((childSnapshot) => {
-        const commande = childSnapshot.val();
-        const commandeId = childSnapshot.key;
-        
-        // Formater la date
-        const date = new Date(commande.timestamp);
-        const timeString = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        
-        // Créer la carte de commande
-        const commandeCard = document.createElement('div');
-        commandeCard.className = 'commande-card';
-        commandeCard.dataset.status = commande.statut || 'pending';
+      if (!orders || Object.keys(orders).length === 0) {
+        container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Aucune commande pour le moment</p>';
+        return;
+      }
+      
+      // Convertir l'objet en tableau et trier par date (du plus récent au plus ancien)
+      const ordersArray = Object.entries(orders).map(([key, value]) => ({
+        id: key,
+        ...value
+      })).sort((a, b) => b.timestamp - a.timestamp);
+      
+      ordersArray.forEach(order => {
+        const orderCard = document.createElement('div');
+        orderCard.className = 'order-card';
         
         // Déterminer la classe de statut
         let statusClass = 'status-pending';
-        let statusText = 'En attente';
-        if (commande.statut === 'preparing') {
-          statusClass = 'status-preparing';
-          statusText = 'En préparation';
-        } else if (commande.statut === 'ready') {
-          statusClass = 'status-ready';
-          statusText = 'Prête';
-        }
+        if (order.statut === 'en préparation') statusClass = 'status-preparing';
+        else if (order.statut === 'prêt') statusClass = 'status-ready';
+        else if (order.statut === 'livré') statusClass = 'status-delivered';
         
-        // Générer le HTML des articles
-        let itemsHTML = '';
-        let total = 0;
-        commande.commandes.forEach((item) => {
-          const itemTotal = item.quantite * item.prix;
-          total += itemTotal;
-          itemsHTML += `
-            <div class="commande-item">
-              <div><span class="item-quantity">${item.quantite}x</span> ${item.plat}</div>
-              <div>${itemTotal} MAD</div>
-            </div>
-          `;
-        });
-        
-        // Remplir la carte de commande
-        commandeCard.innerHTML = `
-          <div class="commande-header">
-            <div class="table-num">Table ${commande.table}</div>
-            <div class="commande-time">${timeString}</div>
+        orderCard.innerHTML = `
+          <div class="order-header">
+            <div class="order-table">Table ${order.table}</div>
+            <div class="order-time">${formatDate(order.timestamp)}</div>
           </div>
-          <div class="commande-status ${statusClass}">${statusText}</div>
-          <div class="commande-items">${itemsHTML}</div>
-          <div class="commande-total">Total: ${total} MAD</div>
-          <div class="commande-actions">
-            ${commande.statut === 'pending' ? 
-              `<button class="action-btn prepare-btn" data-id="${commandeId}">En Préparation</button>` : ''}
-            ${commande.statut === 'preparing' ? 
-              `<button class="action-btn ready-btn" data-id="${commandeId}">Prête à Servir</button>` : ''}
-            ${commande.statut === 'ready' ? 
-              `<button class="action-btn complete-btn" data-id="${commandeId}">Terminer</button>` : ''}
+          
+          <div class="order-status ${statusClass}">${order.statut}</div>
+          
+          <div class="order-items">
+            ${order.commandes.map(item => `
+              <div class="order-item">
+                <div>
+                  <span class="item-quantity">${item.quantite}x</span>
+                  ${item.plat}
+                </div>
+                <div>${item.prix * item.quantite} MAD</div>
+              </div>
+            `).join('')}
+          </div>
+          
+          <div class="order-total">Total: ${order.total} MAD</div>
+          
+          <div class="order-actions">
+            <select class="status-select" data-order-id="${order.id}">
+              <option value="en attente" ${order.statut === 'en attente' ? 'selected' : ''}>En attente</option>
+              <option value="en préparation" ${order.statut === 'en préparation' ? 'selected' : ''}>En préparation</option>
+              <option value="prêt" ${order.statut === 'prêt' ? 'selected' : ''}>Prêt</option>
+              <option value="livré" ${order.statut === 'livré' ? 'selected' : ''}>Livré</option>
+            </select>
+            <button class="update-btn" data-order-id="${order.id}">Mettre à jour</button>
           </div>
         `;
         
-        commandesList.appendChild(commandeCard);
+        container.appendChild(orderCard);
       });
       
-      // Ajouter les événements aux boutons
-      document.querySelectorAll('.prepare-btn').forEach(btn => {
-        btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'preparing'));
-      });
-      document.querySelectorAll('.ready-btn').forEach(btn => {
-        btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'ready'));
-      });
-      document.querySelectorAll('.complete-btn').forEach(btn => {
-        btn.addEventListener('click', () => removeCommande(btn.dataset.id));
-      });
-    });
-    
-    // Fonction pour mettre à jour le statut d'une commande
-    function updateStatus(commandeId, newStatus) {
-      database.ref(`commandes/${commandeId}`).update({
-        statut: newStatus
-      });
-    }
-    
-    // Fonction pour supprimer une commande terminée
-    function removeCommande(commandeId) {
-      database.ref(`commandes/${commandeId}`).remove();
-    }
-    
-    // Filtrage des commandes
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        // Mettre à jour les boutons de filtre
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        
-        const status = this.dataset.status;
-        const commandes = document.querySelectorAll('.commande-card');
-        
-        commandes.forEach(commande => {
-          if (status === 'all') {
-            commande.style.display = 'block';
-          } else {
-            commande.style.display = commande.dataset.status === status ? 'block' : 'none';
-          }
+      // Ajouter les événements pour les boutons de mise à jour
+      document.querySelectorAll('.update-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const orderId = this.getAttribute('data-order-id');
+          const statusSelect = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
+          const newStatus = statusSelect.value;
+          
+          // Mettre à jour le statut dans Firebase
+          database.ref(`commandes/${orderId}/statut`).set(newStatus)
+            .then(() => {
+              alert('Statut mis à jour avec succès');
+              // Actualiser l'affichage
+              loadOrders();
+            })
+            .catch(error => {
+              console.error('Erreur lors de la mise à jour:', error);
+              alert('Une erreur est survenue');
+            });
         });
       });
+    }
+
+    // Fonction pour charger les commandes
+    function loadOrders() {
+      ordersRef.once('value')
+        .then(snapshot => {
+          const orders = snapshot.val();
+          displayOrders(orders);
+        })
+        .catch(error => {
+          console.error('Erreur lors du chargement:', error);
+        });
+    }
+
+    // Charger les commandes au démarrage
+    loadOrders();
+
+    // Actualiser les commandes lorsqu'on clique sur le bouton
+    document.getElementById('refreshBtn').addEventListener('click', loadOrders);
+
+    // Écouter les changements en temps réel (optionnel)
+    ordersRef.on('value', (snapshot) => {
+      const orders = snapshot.val();
+      displayOrders(orders);
     });
   </script>
 </body>
