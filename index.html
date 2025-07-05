@@ -1,14 +1,414 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <!-- ... (بقية ال head كما هي بدون تغيير) ... -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de Commandes - Dar Hassna</title>
+  <style>
+    :root {
+      --color-primary: #d35400;
+      --color-secondary: #5d4037;
+      --color-pending: #856404;
+      --color-preparing: #004085;
+      --color-ready: #155724;
+      --color-delivered: #383d41;
+      --color-danger: #dc3545;
+      --color-light: #f8f1e9;
+    }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: var(--color-light);
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    h1 {
+      color: var(--color-primary);
+      margin: 0;
+    }
+    
+    .clock {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: var(--color-secondary);
+      text-align: right;
+    }
+    
+    .stats-bar {
+      display: flex;
+      justify-content: space-around;
+      background-color: #fff;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .stat-item {
+      text-align: center;
+      padding: 0 15px;
+    }
+    
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    
+    .pending { color: var(--color-pending); }
+    .preparing { color: var(--color-preparing); }
+    .ready { color: var(--color-ready); }
+    .delivered { color: var(--color-delivered); }
+    
+    .status-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    
+    .tab-btn {
+      padding: 10px 15px;
+      border: none;
+      background-color: #eee;
+      margin-right: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    
+    .tab-btn.active {
+      background-color: var(--color-primary);
+      color: white;
+    }
+    
+    .commandes-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+      gap: 15px;
+    }
+    
+    .commande {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: relative;
+      transition: transform 0.2s;
+    }
+    
+    .commande:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .commande-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .table-number {
+      font-weight: bold;
+      color: var(--color-primary);
+      font-size: 1.2em;
+    }
+    
+    .order-time {
+      color: #777;
+      font-size: 0.9em;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    
+    .time-ago {
+      font-size: 0.8em;
+      color: #999;
+    }
+    
+    .order-items {
+      margin: 10px 0;
+    }
+    
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed #eee;
+    }
+    
+    .item-quantity {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+    
+    .order-total {
+      font-weight: bold;
+      text-align: right;
+      margin: 10px 0;
+      padding-top: 5px;
+      border-top: 1px solid #eee;
+    }
+    
+    .order-status {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #ddd;
+    }
+    
+    .status-select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      margin-top: 5px;
+      cursor: pointer;
+    }
+    
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: var(--color-danger);
+      color: white;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .delete-btn:hover {
+      opacity: 1;
+    }
+    
+    .new-order-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: #ff4757;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.7em;
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    @media (max-width: 768px) {
+      .commandes-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .clock {
+        margin-top: 10px;
+        align-self: flex-end;
+      }
+    }
+    
+    /* Print styles */
+    @media print {
+      .no-print, .status-tabs, .delete-btn, .tab-btn, .stats-bar {
+        display: none !important;
+      }
+      
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      
+      .container {
+        box-shadow: none;
+        padding: 0;
+      }
+      
+      .commande {
+        page-break-inside: avoid;
+        border: 1px solid #000;
+      }
+    }
+  </style>
 </head>
 <body>
-  <!-- ... (بقية ال HTML كما هي بدون تغيير) ... -->
+  <div class="container">
+    <div class="header">
+      <h1>Commandes - Dar Hassna</h1>
+      <div class="clock" id="liveClock"></div>
+    </div>
+    
+    <div class="stats-bar no-print">
+      <div class="stat-item">
+        <div class="stat-value pending" id="pending-count">0</div>
+        <div>En attente</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value preparing" id="preparing-count">0</div>
+        <div>En préparation</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value ready" id="ready-count">0</div>
+        <div>Prêtes</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value delivered" id="delivered-count">0</div>
+        <div>Livrées</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="total-count">0</div>
+        <div>Total</div>
+      </div>
+    </div>
+    
+    <div class="status-tabs no-print">
+      <button class="tab-btn active" data-status="all">Toutes</button>
+      <button class="tab-btn" data-status="En attente">En attente</button>
+      <button class="tab-btn" data-status="En préparation">En préparation</button>
+      <button class="tab-btn" data-status="Prêt">Prêtes</button>
+      <button class="tab-btn" data-status="Livré">Livrées</button>
+    </div>
+    
+    <div class="commandes-container" id="liste-commandes"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ... (بقية الكود كما هو بدون تغيير حتى جزء createOrderElement) ...
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpSF4J0bsd6T0ImMpse0KQQRADaxiYUQw",
+      authDomain: "darhassna-484c3.firebaseapp.com",
+      databaseURL: "https://darhassna-484c3-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "darhassna-484c3",
+      storageBucket: "darhassna-484c3.firebasestorage.app",
+      messagingSenderId: "141393162149",
+      appId: "1:141393162149:web:0717227eac221f5ddfc24c"
+    };
 
+    // Initialiser Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const commandesContainer = document.getElementById("liste-commandes");
+    
+    // Variables d'état
+    let allOrders = {};
+    const statusCount = {
+      'En attente': 0,
+      'En préparation': 0,
+      'Prêt': 0,
+      'Livré': 0,
+      'total': 0
+    };
+    
+    // Sons de notification
+    const notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+    const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
+
+    // Fonction pour mettre à jour l'horloge
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const dateString = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('liveClock').innerHTML = `${dateString}<br>${timeString}`;
+    }
+
+    // Mettre à jour l'horloge chaque seconde
+    setInterval(updateClock, 1000);
+    updateClock(); // Appel initial
+
+    // Fonction pour formater la date et calculer le temps écoulé
+    function formatOrderTime(timestamp) {
+      const now = new Date();
+      const orderDate = new Date(timestamp);
+      const timeString = orderDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      
+      const diffInMinutes = Math.floor((now - orderDate) / (1000 * 60));
+      let timeAgo = '';
+      
+      if (diffInMinutes < 1) {
+        timeAgo = 'À l\'instant';
+      } else if (diffInMinutes < 60) {
+        timeAgo = `Il y a ${diffInMinutes} min`;
+      } else {
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        timeAgo = `Il y a ${diffInHours} h`;
+      }
+      
+      return {
+        time: timeString,
+        ago: timeAgo
+      };
+    }
+    
+    // Mettre à jour les compteurs de statut
+    function updateStatusCounters() {
+      document.getElementById('pending-count').textContent = statusCount['En attente'];
+      document.getElementById('preparing-count').textContent = statusCount['En préparation'];
+      document.getElementById('ready-count').textContent = statusCount['Prêt'];
+      document.getElementById('delivered-count').textContent = statusCount['Livré'];
+      document.getElementById('total-count').textContent = statusCount['total'];
+    }
+    
+    // Filtrer les commandes par statut
+    function filterOrders(status) {
+      const allOrdersDivs = document.querySelectorAll('.commande');
+      
+      allOrdersDivs.forEach(div => {
+        const orderStatus = div.querySelector('.status-select').value;
+        
+        if (status === 'all' || orderStatus === status) {
+          div.style.display = 'block';
+        } else {
+          div.style.display = 'none';
+        }
+      });
+      
+      // Mettre à jour les boutons d'onglet actifs
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.status === status) {
+          btn.classList.add('active');
+        }
+      });
+    }
+    
     // Créer un élément de commande
     function createOrderElement(key, data) {
       const currentStatus = data.etat || data.statut || "En attente";
@@ -56,14 +456,16 @@
       `;
       
       // Ajouter un badge pour les nouvelles commandes
-      if (Date.now() - data.timestamp < 30000) {
+      if (Date.now() - data.timestamp < 30000) { // 30 secondes
         const badge = document.createElement('div');
         badge.className = 'new-order-badge';
         badge.textContent = '!';
         div.appendChild(badge);
         
+        // Jouer un son pour les nouvelles commandes
         notificationSound.play().catch(e => console.log("Audio playback error:", e));
         
+        // Supprimer le badge après 30 secondes
         setTimeout(() => {
           badge.remove();
         }, 30000);
@@ -77,20 +479,112 @@
           statut: newStatus
         });
         
+        // Jouer un son de confirmation
         statusChangeSound.play().catch(e => console.log("Audio playback error:", e));
       });
       
-      // Écouter le bouton de suppression (AVEC CONFIRMATION)
+      // Écouter le bouton de suppression (SANS CONFIRMATION)
       div.querySelector('.delete-btn')?.addEventListener("click", function() {
-        if (confirm("Voulez-vous vraiment supprimer cette commande ? Cette action est irréversible.")) {
-          db.ref("commandes/" + key).remove();
-        }
+        db.ref("commandes/" + key).remove();
       });
       
       return div;
     }
-
-    // ... (بقية الكود كما هو بدون تغيير) ...
+    
+    // Initialiser les écouteurs d'événements Firebase
+    function initFirebaseListeners() {
+      // Écouter les nouvelles commandes
+      db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
+        const data = snapshot.val();
+        const key = snapshot.key;
+        
+        // Si la commande n'a pas d'état, définir "En attente" par défaut
+        if (!data.etat && !data.statut) {
+          db.ref("commandes/" + key).update({ etat: "En attente", statut: "En attente" });
+          return;
+        }
+        
+        const currentStatus = data.etat || data.statut || "En attente";
+        
+        // Mettre à jour le compteur
+        statusCount[currentStatus]++;
+        statusCount['total']++;
+        updateStatusCounters();
+        
+        // Stocker la commande
+        allOrders[key] = { ...data, status: currentStatus };
+        
+        // Créer et ajouter l'élément
+        const orderElement = createOrderElement(key, data);
+        commandesContainer.appendChild(orderElement);
+      });
+      
+      // Écouter les modifications des commandes existantes
+      db.ref("commandes").on("child_changed", (snapshot) => {
+        const data = snapshot.val();
+        const key = snapshot.key;
+        const currentStatus = data.etat || data.statut || "En attente";
+        
+        // Mettre à jour le compteur si le statut a changé
+        if (allOrders[key] && allOrders[key].status !== currentStatus) {
+          statusCount[allOrders[key].status]--;
+          statusCount[currentStatus]++;
+          updateStatusCounters();
+          
+          allOrders[key].status = currentStatus;
+        }
+        
+        const commandeDiv = document.getElementById(`commande-${key}`);
+        
+        if (commandeDiv) {
+          const select = commandeDiv.querySelector('.status-select');
+          if (select) {
+            select.value = currentStatus;
+          }
+          
+          // Mettre à jour la classe pour le style
+          commandeDiv.className = `commande status-${currentStatus.replace(/\s+/g, '-').toLowerCase()}`;
+          commandeDiv.dataset.status = currentStatus;
+        }
+      });
+      
+      // Écouter les suppressions de commandes
+      db.ref("commandes").on("child_removed", (snapshot) => {
+        const key = snapshot.key;
+        
+        if (allOrders[key]) {
+          // Mettre à jour le compteur
+          statusCount[allOrders[key].status]--;
+          statusCount['total']--;
+          updateStatusCounters();
+          
+          delete allOrders[key];
+        }
+        
+        const commandeDiv = document.getElementById(`commande-${key}`);
+        if (commandeDiv) {
+          commandeDiv.remove();
+        }
+      });
+    }
+    
+    // Initialiser les onglets de filtrage
+    function initFilterTabs() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterOrders(btn.dataset.status);
+        });
+      });
+    }
+    
+    // Initialiser l'application
+    function initApp() {
+      initFirebaseListeners();
+      initFilterTabs();
+    }
+    
+    // Démarrer l'application lorsque la page est chargée
+    window.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
