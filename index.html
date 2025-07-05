@@ -158,6 +158,15 @@
       const data = snapshot.val();
       const key = snapshot.key;
 
+      // إذا لم يكن هناك حالة، نُضيفها تلقائيًا
+      if (!data.etat && !data.statut) {
+        db.ref("commandes/" + key).update({ etat: "En attente" });
+        return; // نخرج من الدالة لأن البيانات ستُحدث تلقائياً
+      }
+
+      // نستخدم data.etat أو data.statut (للتأكد من التوافق مع الإصدارات السابقة)
+      const currentStatus = data.etat || data.statut || "En attente";
+
       const div = document.createElement("div");
       div.className = "commande";
       div.id = `commande-${key}`;
@@ -186,10 +195,10 @@
         <div class="order-status">
           <label>État :</label>
           <select class="status-select" data-key="${key}">
-            <option value="en attente" ${data.statut === "en attente" ? "selected" : ""}>🕐 En attente</option>
-            <option value="en préparation" ${data.statut === "en préparation" ? "selected" : ""}>👨‍🍳 En préparation</option>
-            <option value="prêt" ${data.statut === "prêt" ? "selected" : ""}>✅ Prêt</option>
-            <option value="livré" ${data.statut === "livré" ? "selected" : ""}>🛵 Livré</option>
+            <option value="En attente" ${currentStatus === "En attente" ? "selected" : ""}>🕐 En attente</option>
+            <option value="En préparation" ${currentStatus === "En préparation" ? "selected" : ""}>👨‍🍳 En préparation</option>
+            <option value="Prêt" ${currentStatus === "Prêt" ? "selected" : ""}>✅ Prêt</option>
+            <option value="Livré" ${currentStatus === "Livré" ? "selected" : ""}>🛵 Livré</option>
           </select>
         </div>
       `;
@@ -197,7 +206,10 @@
       // Écouter les changements d'état
       div.querySelector('.status-select').addEventListener("change", function() {
         const newStatus = this.value;
-        db.ref("commandes/" + key).update({ statut: newStatus });
+        db.ref("commandes/" + key).update({ 
+          etat: newStatus,
+          statut: newStatus // للتأكد من التوافق مع الإصدارات السابقة
+        });
       });
 
       // Écouter le bouton de suppression
@@ -219,7 +231,8 @@
       if (commandeDiv) {
         const select = commandeDiv.querySelector('.status-select');
         if (select) {
-          select.value = data.statut;
+          const currentStatus = data.etat || data.statut || "En attente";
+          select.value = currentStatus;
         }
       }
     });
