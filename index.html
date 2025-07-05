@@ -24,6 +24,23 @@
       text-align: center;
       margin-bottom: 30px;
     }
+    .filters {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .filter-btn {
+      padding: 8px 15px;
+      background-color: #e0e0e0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .filter-btn.active {
+      background-color: #d35400;
+      color: white;
+    }
     .orders-container {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -102,34 +119,30 @@
       display: flex;
       justify-content: space-between;
       margin-top: 15px;
+      gap: 10px;
     }
     .status-select {
       padding: 5px;
       border-radius: 4px;
       border: 1px solid #ddd;
       flex-grow: 1;
-      margin-right: 10px;
     }
-    .update-btn {
-      background-color: #d35400;
+    .action-btn {
       color: white;
       border: none;
       padding: 5px 10px;
       border-radius: 4px;
       cursor: pointer;
       min-width: 100px;
+    }
+    .update-btn {
+      background-color: #d35400;
     }
     .update-btn:hover {
       background-color: #e67e22;
     }
     .delete-btn {
       background-color: #dc3545;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      min-width: 100px;
     }
     .delete-btn:hover {
       background-color: #c82333;
@@ -151,7 +164,15 @@
 </head>
 <body>
   <div class="container">
-    <h1>Commandes en Cours - Dar Hassna</h1>
+    <h1>Commandes - Dar Hassna</h1>
+    
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Toutes</button>
+      <button class="filter-btn" data-filter="en attente">En attente</button>
+      <button class="filter-btn" data-filter="en préparation">En préparation</button>
+      <button class="filter-btn" data-filter="prêt">Prêt</button>
+      <button class="filter-btn" data-filter="livré">Livré</button>
+    </div>
     
     <button class="refresh-btn" id="refreshBtn">Actualiser les Commandes</button>
     
@@ -182,6 +203,8 @@
 
     // Référence à la base de données
     const ordersRef = database.ref('commandes');
+    let allOrders = [];
+    let currentFilter = 'all';
 
     // Fonction pour formater la date
     function formatDate(timestamp) {
@@ -189,23 +212,25 @@
       return date.toLocaleTimeString('fr-FR') + ' ' + date.toLocaleDateString('fr-FR');
     }
 
+    // Fonction pour filtrer les commandes
+    function filterOrders() {
+      const filtered = currentFilter === 'all' 
+        ? allOrders 
+        : allOrders.filter(order => order.statut === currentFilter);
+      displayOrders(filtered);
+    }
+
     // Fonction pour afficher les commandes
     function displayOrders(orders) {
       const container = document.getElementById('ordersContainer');
       container.innerHTML = '';
       
-      if (!orders || Object.keys(orders).length === 0) {
+      if (!orders || orders.length === 0) {
         container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Aucune commande pour le moment</p>';
         return;
       }
       
-      // Convertir l'objet en tableau et trier par date (du plus récent au plus ancien)
-      const ordersArray = Object.entries(orders).map(([key, value]) => ({
-        id: key,
-        ...value
-      })).sort((a, b) => b.timestamp - a.timestamp);
-      
-      ordersArray.forEach(order => {
+      orders.forEach(order => {
         const orderCard = document.createElement('div');
         orderCard.className = 'order-card';
         
@@ -244,10 +269,8 @@
               <option value="prêt" ${order.statut === 'prêt' ? 'selected' : ''}>Prêt</option>
               <option value="livré" ${order.statut === 'livré' ? 'selected' : ''}>Livré</option>
             </select>
-            ${order.statut === 'livré' ? 
-              `<button class="delete-btn" data-order-id="${order.id}">Supprimer</button>` : 
-              `<button class="update-btn" data-order-id="${order.id}">Mettre à jour</button>`
-            }
+            <button class="action-btn update-btn" data-order-id="${order.id}">Mettre à jour</button>
+            <button class="action-btn delete-btn" data-order-id="${order.id}">Supprimer</button>
           </div>
         `;
         
@@ -265,7 +288,7 @@
           database.ref(`commandes/${orderId}/statut`).set(newStatus)
             .then(() => {
               alert('Statut mis à jour avec succès');
-              // Actualiser l'affichage
+              // Actualiser les données
               loadOrders();
             })
             .catch(error => {
@@ -278,14 +301,14 @@
       // Ajouter les événements pour les boutons de suppression
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-          if (confirm('Voulez-vous vraiment supprimer cette commande ?')) {
+          if (confirm('Voulez-vous vraiment supprimer cette commande définitivement ?')) {
             const orderId = this.getAttribute('data-order-id');
             
             // Supprimer la commande de Firebase
             database.ref(`commandes/${orderId}`).remove()
               .then(() => {
                 alert('Commande supprimée avec succès');
-                // Actualiser l'affichage
+                // Actualiser les données
                 loadOrders();
               })
               .catch(error => {
@@ -302,7 +325,13 @@
       ordersRef.once('value')
         .then(snapshot => {
           const orders = snapshot.val();
-          displayOrders(orders);
+          // Convertir l'objet en tableau et trier par date (du plus récent au plus ancien)
+          allOrders = orders ? Object.entries(orders).map(([key, value]) => ({
+            id: key,
+            ...value
+          })).sort((a, b) => b.timestamp - a.timestamp) : [];
+          
+          filterOrders();
         })
         .catch(error => {
           console.error('Erreur lors du chargement:', error);
@@ -315,10 +344,24 @@
     // Actualiser les commandes lorsqu'on clique sur le bouton
     document.getElementById('refreshBtn').addEventListener('click', loadOrders);
 
-    // Écouter les changements en temps réel (optionnel)
+    // Écouter les changements en temps réel
     ordersRef.on('value', (snapshot) => {
       const orders = snapshot.val();
-      displayOrders(orders);
+      allOrders = orders ? Object.entries(orders).map(([key, value]) => ({
+        id: key,
+        ...value
+      })).sort((a, b) => b.timestamp - a.timestamp) : [];
+      filterOrders();
+    });
+
+    // Gestion des filtres
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.getAttribute('data-filter');
+        filterOrders();
+      });
     });
   </script>
 </body>
