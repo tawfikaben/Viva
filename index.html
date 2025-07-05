@@ -1,20 +1,266 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Commandes - Cuisine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu - Dar Hassna</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f8f1e9;
+      color: #5d4037;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      color: #d35400;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      text-align: center;
+      font-style: italic;
+      color: #7f8c8d;
+      margin-bottom: 30px;
+    }
+    .menu-section {
+      margin-bottom: 30px;
+    }
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed #ddd;
+    }
+    .item-name {
+      font-weight: bold;
+    }
+    .item-price {
+      color: #d35400;
+    }
+    .item-desc {
+      font-size: 0.9em;
+      color: #7f8c8d;
+      margin-top: 5px;
+    }
+    form {
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+    label {
+      display: block;
+      margin: 15px 0 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #d35400;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin-top: 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #e67e22;
+    }
+    .confirmation {
+      display: none;
+      background-color: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .commande-item {
+      background-color: #f0f0f0;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .remove-item {
+      color: #d35400;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #listeCommandes {
+      margin-top: 20px;
+    }
+    .total {
+      font-weight: bold;
+      text-align: right;
+      margin-top: 10px;
+      font-size: 1.2em;
+    }
+  </style>
 </head>
 <body>
-  <h2>Liste des commandes</h2>
-  <div id="liste-commandes"></div>
+  <div class="container">
+    <h1>Dar Hassna</h1>
+    <p class="subtitle">Cuisine marocaine authentique</p>
+    
+    <h2>Notre Menu</h2>
+    
+    <div class="menu-section">
+      <h3>Plats Principaux</h3>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Couscous Royal</div>
+          <div class="item-desc">Semoule accompagnée de légumes, viandes et bouillon</div>
+        </div>
+        <div class="item-price">85 MAD</div>
+      </div>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Tajine de Poulet aux Olives</div>
+          <div class="item-desc">Poulet mijoté avec olives et citron confit</div>
+        </div>
+        <div class="item-price">75 MAD</div>
+      </div>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Pastilla au Pigeon</div>
+          <div class="item-desc">Feuilles de brick farcies au pigeon, amandes et épices</div>
+        </div>
+        <div class="item-price">90 MAD</div>
+      </div>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Méchoui d'Agneau</div>
+          <div class="item-desc">Épaule d'agneau lentement rôtie à la braise</div>
+        </div>
+        <div class="item-price">120 MAD</div>
+      </div>
+    </div>
+    
+    <div class="menu-section">
+      <h3>Entrées et Soupes</h3>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Harira Traditionnelle</div>
+          <div class="item-desc">Soupe marocaine à base de lentilles, tomates et viande</div>
+        </div>
+        <div class="item-price">35 MAD</div>
+      </div>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Briouates au Fromage</div>
+          <div class="item-desc">Feuilles de brick farcies au fromage et fines herbes</div>
+        </div>
+        <div class="item-price">45 MAD</div>
+      </div>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Salade Marocaine</div>
+          <div class="item-desc">Mélange de légumes frais avec coriandre et citron</div>
+        </div>
+        <div class="item-price">40 MAD</div>
+      </div>
+    </div>
+    
+    <div class="menu-section">
+      <h3>Desserts</h3>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Baklava</div>
+          <div class="item-desc">Pâtisserie feuilletée aux amandes et miel</div>
+        </div>
+        <div class="item-price">30 MAD</div>
+      </div>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">M'hanncha</div>
+          <div class="item-desc">Gâteau en forme de serpent à la pâte d'amande</div>
+        </div>
+        <div class="item-price">35 MAD</div>
+      </div>
+      
+      <div class="menu-item">
+        <div>
+          <div class="item-name">Thé à la Menthe</div>
+          <div class="item-desc">Thé vert avec menthe fraîche et sucre</div>
+        </div>
+        <div class="item-price">20 MAD</div>
+      </div>
+    </div>
+    
+    <form id="commandeForm">
+      <h2>Passer Commande</h2>
+      
+      <label for="table">Numéro de table:</label>
+      <input type="number" id="table" min="1" required>
+      
+      <label for="plat">Sélectionnez votre plat:</label>
+      <select id="plat">
+        <option value="">-- Choisissez un plat --</option>
+        <option value="Couscous Royal">Couscous Royal - 85 MAD</option>
+        <option value="Tajine de Poulet aux Olives">Tajine de Poulet aux Olives - 75 MAD</option>
+        <option value="Pastilla au Pigeon">Pastilla au Pigeon - 90 MAD</option>
+        <option value="Méchoui d'Agneau">Méchoui d'Agneau - 120 MAD</option>
+        <option value="Harira Traditionnelle">Harira Traditionnelle - 35 MAD</option>
+        <option value="Briouates au Fromage">Briouates au Fromage - 45 MAD</option>
+        <option value="Salade Marocaine">Salade Marocaine - 40 MAD</option>
+        <option value="Baklava">Baklava - 30 MAD</option>
+        <option value="M'hanncha">M'hanncha - 35 MAD</option>
+        <option value="Thé à la Menthe">Thé à la Menthe - 20 MAD</option>
+      </select>
+      
+      <label for="quantite">Quantité:</label>
+      <input type="number" id="quantite" min="1" value="1">
+      
+      <button type="button" id="ajouterPlat">Ajouter à la commande</button>
+      
+      <div id="listeCommandes"></div>
+      
+      <div class="total" id="totalCommande">Total: 0 MAD</div>
+      
+      <button type="submit">Confirmer la Commande</button>
+      
+      <div id="confirmation" class="confirmation"></div>
+    </form>
+  </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-  <!-- Configuration Firebase -->
   <script>
+    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDpSF4J0bsd6T0ImMpse0KQQRADaxiYUQw",
       authDomain: "darhassna-484c3.firebaseapp.com",
@@ -25,19 +271,123 @@
       appId: "1:141393162149:web:0717227eac221f5ddfc24c"
     };
 
+    // Initialiser Firebase
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const database = firebase.database();
 
-    const commandesDiv = document.getElementById("liste-commandes");
+    // Prix des plats
+    const prixPlats = {
+      "Couscous Royal": 85,
+      "Tajine de Poulet aux Olives": 75,
+      "Pastilla au Pigeon": 90,
+      "Méchoui d'Agneau": 120,
+      "Harira Traditionnelle": 35,
+      "Briouates au Fromage": 45,
+      "Salade Marocaine": 40,
+      "Baklava": 30,
+      "M'hanncha": 35,
+      "Thé à la Menthe": 20
+    };
 
-    db.ref("commandes").on("child_added", (snapshot) => {
-      const data = snapshot.val();
-      const div = document.createElement("div");
-      div.innerHTML = `<strong>${data.nom}</strong> a commandé : ${data.plat}`;
-      div.style.border = "1px solid #ccc";
-      div.style.margin = "10px";
-      div.style.padding = "10px";
-      commandesDiv.appendChild(div);
+    // Variables pour stocker les commandes
+    let commandes = [];
+    let total = 0;
+
+    // Ajouter un plat à la commande
+    document.getElementById('ajouterPlat').addEventListener('click', function() {
+      const plat = document.getElementById('plat').value;
+      const quantite = parseInt(document.getElementById('quantite').value);
+      
+      if (!plat || quantite < 1) {
+        alert('Veuillez sélectionner un plat et une quantité valide.');
+        return;
+      }
+      
+      // Ajouter à la liste des commandes
+      commandes.push({
+        plat: plat,
+        quantite: quantite,
+        prix: prixPlats[plat]
+      });
+      
+      // Mettre à jour l'affichage
+      afficherCommandes();
+      
+      // Réinitialiser les champs
+      document.getElementById('plat').value = '';
+      document.getElementById('quantite').value = '1';
+    });
+
+    // Afficher la liste des commandes
+    function afficherCommandes() {
+      const listeCommandes = document.getElementById('listeCommandes');
+      listeCommandes.innerHTML = '';
+      total = 0;
+      
+      commandes.forEach((commande, index) => {
+        const sousTotal = commande.quantite * commande.prix;
+        total += sousTotal;
+        
+        const div = document.createElement('div');
+        div.className = 'commande-item';
+        div.innerHTML = `
+          <div>
+            ${commande.quantite} x ${commande.plat} (${commande.prix} MAD)
+          </div>
+          <div>
+            ${sousTotal} MAD <span class="remove-item" data-index="${index}">×</span>
+          </div>
+        `;
+        listeCommandes.appendChild(div);
+      });
+      
+      // Mettre à jour le total
+      document.getElementById('totalCommande').textContent = `Total: ${total} MAD`;
+      
+      // Ajouter les événements pour supprimer des items
+      document.querySelectorAll('.remove-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const index = parseInt(this.getAttribute('data-index'));
+          commandes.splice(index, 1);
+          afficherCommandes();
+        });
+      });
+    }
+
+    // Gérer la soumission du formulaire
+    document.getElementById('commandeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const table = document.getElementById('table').value;
+      
+      if (!table || commandes.length === 0) {
+        alert('Veuillez spécifier un numéro de table et ajouter au moins un plat.');
+        return;
+      }
+      
+      // Envoyer les données à Firebase
+      database.ref('commandes').push({
+        table: table,
+        commandes: commandes,
+        total: total,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        statut: 'en attente'
+      });
+      
+      // Afficher la confirmation
+      const confirmation = document.getElementById('confirmation');
+      confirmation.textContent = `Commande confirmée pour la table ${table}! Total: ${total} MAD`;
+      confirmation.style.display = 'block';
+      
+      // Réinitialiser le formulaire
+      commandes = [];
+      afficherCommandes();
+      document.getElementById('table').value = '';
+      
+      // Masquer la confirmation après 5 secondes
+      setTimeout(() => {
+        confirmation.style.display = 'none';
+      }, 5000);
     });
   </script>
 </body>
