@@ -6,14 +6,14 @@
   <title>Tableau de Commandes - Dar Hassna</title>
   <style>
     :root {
-      --color-primary: #2c3e50; /* Changed to dark blue */
-      --color-secondary: #7f8c8d; /* Changed to gray */
-      --color-pending: #f39c12; /* Changed to orange */
-      --color-preparing: #3498db; /* Changed to blue */
-      --color-ready: #27ae60; /* Changed to green */
-      --color-delivered: #9b59b6; /* Changed to purple */
-      --color-danger: #e74c3c; /* Changed to red */
-      --color-light: #ecf0f1; /* Changed to light gray */
+      --color-primary: #2c3e50;
+      --color-secondary: #7f8c8d;
+      --color-pending: #f39c12;
+      --color-preparing: #3498db;
+      --color-ready: #27ae60;
+      --color-delivered: #9b59b6;
+      --color-danger: #e74c3c;
+      --color-light: #ecf0f1;
     }
     
     body {
@@ -162,6 +162,14 @@
       margin-right: 5px;
     }
     
+    .order-notes {
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      border-right: 3px solid var(--color-pending);
+    }
+    
     .order-total {
       font-weight: bold;
       text-align: right;
@@ -242,7 +250,6 @@
       }
     }
     
-    /* Print styles */
     @media print {
       .no-print, .status-tabs, .delete-btn, .tab-btn, .stats-bar {
         display: none !important;
@@ -266,7 +273,6 @@
   </style>
 </head>
 <body>
-  <!-- باقي الكود كما هو تماما دون أي تغييرات -->
   <div class="container">
     <div class="header">
       <h1>Commandes - Dar Hassna</h1>
@@ -307,13 +313,10 @@
     <div class="commandes-container" id="liste-commandes"></div>
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // باقي الكود JavaScript كما هو تماما دون أي تغييرات
-    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDpSF4J0bsd6T0ImMpse0KQQRADaxiYUQw",
       authDomain: "darhassna-484c3.firebaseapp.com",
@@ -324,12 +327,10 @@
       appId: "1:141393162149:web:0717227eac221f5ddfc24c"
     };
 
-    // Initialiser Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const commandesContainer = document.getElementById("liste-commandes");
     
-    // Variables d'état
     let allOrders = {};
     const statusCount = {
       'En attente': 0,
@@ -339,11 +340,9 @@
       'total': 0
     };
     
-    // Sons de notification
     const notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
     const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
 
-    // Fonction pour mettre à jour l'horloge
     function updateClock() {
       const now = new Date();
       const timeString = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -351,11 +350,9 @@
       document.getElementById('liveClock').innerHTML = `${dateString}<br>${timeString}`;
     }
 
-    // Mettre à jour l'horloge chaque seconde
     setInterval(updateClock, 1000);
-    updateClock(); // Appel initial
+    updateClock();
 
-    // Fonction pour formater la date et calculer le temps écoulé
     function formatOrderTime(timestamp) {
       const now = new Date();
       const orderDate = new Date(timestamp);
@@ -379,7 +376,6 @@
       };
     }
     
-    // Mettre à jour les compteurs de statut
     function updateStatusCounters() {
       document.getElementById('pending-count').textContent = statusCount['En attente'];
       document.getElementById('preparing-count').textContent = statusCount['En préparation'];
@@ -388,7 +384,6 @@
       document.getElementById('total-count').textContent = statusCount['total'];
     }
     
-    // Filtrer les commandes par statut
     function filterOrders(status) {
       const allOrdersDivs = document.querySelectorAll('.commande');
       
@@ -402,7 +397,6 @@
         }
       });
       
-      // Mettre à jour les boutons d'onglet actifs
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.status === status) {
@@ -411,7 +405,6 @@
       });
     }
     
-    // Créer un élément de commande
     function createOrderElement(key, data) {
       const currentStatus = data.etat || data.statut || "En attente";
       const timeInfo = formatOrderTime(data.timestamp);
@@ -420,6 +413,27 @@
       div.className = `commande status-${currentStatus.replace(/\s+/g, '-').toLowerCase()}`;
       div.id = `commande-${key}`;
       div.dataset.status = currentStatus;
+      
+      // بناء HTML للعناصر المطلوبة مع إضافة الملاحظات إذا وجدت
+      let itemsHTML = data.commandes.map(item => `
+        <div class="order-item">
+          <div>
+            <span class="item-quantity">${item.quantite}x</span>
+            ${item.plat}
+          </div>
+          <div>${item.prix * item.quantite} MAD</div>
+        </div>
+      `).join('');
+      
+      // إضافة الملاحظات العامة للطلب إذا وجدت
+      let notesHTML = '';
+      if (data.notes && data.notes.trim() !== '') {
+        notesHTML = `
+          <div class="order-notes">
+            <strong>ملاحظة:</strong> ${data.notes}
+          </div>
+        `;
+      }
       
       div.innerHTML = `
         <button class="delete-btn no-print" data-key="${key}">×</button>
@@ -432,17 +446,10 @@
         </div>
         
         <div class="order-items">
-          ${data.commandes.map(item => `
-            <div class="order-item">
-              <div>
-                <span class="item-quantity">${item.quantite}x</span>
-                ${item.plat}
-                ${item.notes ? `<br><small>(${item.notes})</small>` : ''}
-              </div>
-              <div>${item.prix * item.quantite} MAD</div>
-            </div>
-          `).join('')}
+          ${itemsHTML}
         </div>
+        
+        ${notesHTML}
         
         <div class="order-total">Total: ${data.total} MAD</div>
         
@@ -457,7 +464,6 @@
         </div>
       `;
       
-      // Ajouter un badge pour les nouvelles commandes
       if (Date.now() - data.timestamp < 30000) {
         const badge = document.createElement('div');
         badge.className = 'new-order-badge';
@@ -471,7 +477,6 @@
         }, 30000);
       }
       
-      // Écouter les changements d'état (SANS CONFIRMATION)
       div.querySelector('.status-select').addEventListener("change", function() {
         const newStatus = this.value;
         db.ref("commandes/" + key).update({ 
@@ -482,7 +487,6 @@
         statusChangeSound.play().catch(e => console.log("Audio playback error:", e));
       });
       
-      // Écouter le bouton de suppression (AVEC CONFIRMATION)
       div.querySelector('.delete-btn')?.addEventListener("click", function() {
         if (confirm("Voulez-vous vraiment supprimer cette commande ?")) {
           db.ref("commandes/" + key).remove();
@@ -492,9 +496,7 @@
       return div;
     }
     
-    // Initialiser les écouteurs d'événements Firebase
     function initFirebaseListeners() {
-      // Écouter les nouvelles commandes
       db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
         const data = snapshot.val();
         const key = snapshot.key;
@@ -516,7 +518,6 @@
         commandesContainer.appendChild(orderElement);
       });
       
-      // Écouter les modifications des commandes existantes
       db.ref("commandes").on("child_changed", (snapshot) => {
         const data = snapshot.val();
         const key = snapshot.key;
@@ -543,7 +544,6 @@
         }
       });
       
-      // Écouter les suppressions de commandes
       db.ref("commandes").on("child_removed", (snapshot) => {
         const key = snapshot.key;
         
@@ -562,7 +562,6 @@
       });
     }
     
-    // Initialiser les onglets de filtrage
     function initFilterTabs() {
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -571,13 +570,11 @@
       });
     }
     
-    // Initialiser l'application
     function initApp() {
       initFirebaseListeners();
       initFilterTabs();
     }
     
-    // Démarrer l'application lorsque la page est chargée
     window.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
