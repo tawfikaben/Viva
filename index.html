@@ -294,7 +294,7 @@
       </div>
       <div class="stat-item">
         <div class="stat-value delivered" id="delivered-count">0</div>
-        <div>Livrées</div>
+        <div>Sorties</div>
       </div>
       <div class="stat-item">
         <div class="stat-value" id="total-count">0</div>
@@ -307,7 +307,7 @@
       <button class="tab-btn" data-status="En attente">En attente</button>
       <button class="tab-btn" data-status="En préparation">En préparation</button>
       <button class="tab-btn" data-status="Prêt">Prêtes</button>
-      <button class="tab-btn" data-status="Livré">Livrées</button>
+      <button class="tab-btn" data-status="Sortie">Sorties</button>
     </div>
     
     <div class="commandes-container" id="liste-commandes"></div>
@@ -336,7 +336,7 @@
       'En attente': 0,
       'En préparation': 0,
       'Prêt': 0,
-      'Livré': 0,
+      'Sortie': 0,
       'total': 0
     };
     
@@ -380,7 +380,7 @@
       document.getElementById('pending-count').textContent = statusCount['En attente'];
       document.getElementById('preparing-count').textContent = statusCount['En préparation'];
       document.getElementById('ready-count').textContent = statusCount['Prêt'];
-      document.getElementById('delivered-count').textContent = statusCount['Livré'];
+      document.getElementById('delivered-count').textContent = statusCount['Sortie'];
       document.getElementById('total-count').textContent = statusCount['total'];
     }
     
@@ -407,6 +407,12 @@
     
     function createOrderElement(key, data) {
       const currentStatus = data.etat || data.statut || "En attente";
+      // تغيير حالة "Livré" إلى "Sortie" إذا كانت موجودة
+      if (currentStatus === "Livré") {
+        db.ref("commandes/" + key).update({ etat: "Sortie", statut: "Sortie" });
+        return;
+      }
+      
       const timeInfo = formatOrderTime(data.timestamp);
       
       const div = document.createElement("div");
@@ -414,7 +420,6 @@
       div.id = `commande-${key}`;
       div.dataset.status = currentStatus;
       
-      // بناء HTML للعناصر المطلوبة مع إضافة الملاحظات إذا وجدت
       let itemsHTML = data.commandes.map(item => `
         <div class="order-item">
           <div>
@@ -425,7 +430,6 @@
         </div>
       `).join('');
       
-      // إضافة الملاحظات العامة للطلب إذا وجدت
       let notesHTML = '';
       if (data.notes && data.notes.trim() !== '') {
         notesHTML = `
@@ -459,7 +463,7 @@
             <option value="En attente" ${currentStatus === "En attente" ? "selected" : ""}>🕐 En attente</option>
             <option value="En préparation" ${currentStatus === "En préparation" ? "selected" : ""}>👨‍🍳 En préparation</option>
             <option value="Prêt" ${currentStatus === "Prêt" ? "selected" : ""}>✅ Prêt</option>
-            <option value="Livré" ${currentStatus === "Livré" ? "selected" : ""}>🛵 Livré</option>
+            <option value="Sortie" ${currentStatus === "Sortie" ? "selected" : ""}>🚪 Sortie</option>
           </select>
         </div>
       `;
@@ -506,7 +510,12 @@
           return;
         }
         
-        const currentStatus = data.etat || data.statut || "En attente";
+        let currentStatus = data.etat || data.statut || "En attente";
+        // تغيير حالة "Livré" إلى "Sortie" إذا كانت موجودة
+        if (currentStatus === "Livré") {
+          currentStatus = "Sortie";
+          db.ref("commandes/" + key).update({ etat: "Sortie", statut: "Sortie" });
+        }
         
         statusCount[currentStatus]++;
         statusCount['total']++;
@@ -521,7 +530,13 @@
       db.ref("commandes").on("child_changed", (snapshot) => {
         const data = snapshot.val();
         const key = snapshot.key;
-        const currentStatus = data.etat || data.statut || "En attente";
+        let currentStatus = data.etat || data.statut || "En attente";
+        
+        // تغيير حالة "Livré" إلى "Sortie" إذا كانت موجودة
+        if (currentStatus === "Livré") {
+          currentStatus = "Sortie";
+          db.ref("commandes/" + key).update({ etat: "Sortie", statut: "Sortie" });
+        }
         
         if (allOrders[key] && allOrders[key].status !== currentStatus) {
           statusCount[allOrders[key].status]--;
