@@ -384,6 +384,15 @@
       document.getElementById('total-count').textContent = statusCount['total'];
     }
     
+    function resetStatusCounters() {
+      statusCount['En attente'] = 0;
+      statusCount['En préparation'] = 0;
+      statusCount['Prêt'] = 0;
+      statusCount['Sortie'] = 0;
+      statusCount['total'] = 0;
+      updateStatusCounters();
+    }
+    
     function filterOrders(status) {
       const allOrdersDivs = document.querySelectorAll('.commande');
       
@@ -405,14 +414,20 @@
       });
     }
     
+    function updateCommandeUI(key, status) {
+      const commandeDiv = document.getElementById(`commande-${key}`);
+      if (commandeDiv) {
+        const select = commandeDiv.querySelector('.status-select');
+        if (select) {
+          select.value = status;
+        }
+        commandeDiv.className = `commande status-${status.replace(/\s+/g, '-').toLowerCase()}`;
+        commandeDiv.dataset.status = status;
+      }
+    }
+    
     function createOrderElement(key, data) {
       const currentStatus = data.etat || data.statut || "En attente";
-      // تغيير حالة "Livré" إلى "Sortie" إذا كانت موجودة
-      if (currentStatus === "Livré") {
-        db.ref("commandes/" + key).update({ etat: "Sortie", statut: "Sortie" });
-        return;
-      }
-      
       const timeInfo = formatOrderTime(data.timestamp);
       
       const div = document.createElement("div");
@@ -501,28 +516,39 @@
     }
     
     function initFirebaseListeners() {
+      resetStatusCounters();
+
       db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
         const data = snapshot.val();
         const key = snapshot.key;
         
         if (!data.etat && !data.statut) {
-          db.ref("commandes/" + key).update({ etat: "En attente", statut: "En attente" });
-          return;
+          const updates = {
+            etat: "En attente",
+            statut: "En attente"
+          };
+          db.ref("commandes/" + key).update(updates);
+          data.etat = "En attente";
+          data.statut = "En attente";
         }
         
-        let currentStatus = data.etat || data.statut || "En attente";
-        // تغيير حالة "Livré" إلى "Sortie" إذا كانت موجودة
+        let currentStatus = data.etat || data.statut;
+        
         if (currentStatus === "Livré") {
           currentStatus = "Sortie";
-          db.ref("commandes/" + key).update({ etat: "Sortie", statut: "Sortie" });
+          db.ref("commandes/" + key).update({ 
+            etat: "Sortie",
+            statut: "Sortie"
+          });
         }
         
-        statusCount[currentStatus]++;
-        statusCount['total']++;
-        updateStatusCounters();
+        if (!allOrders[key]) {
+          statusCount[currentStatus]++;
+          statusCount['total']++;
+          updateStatusCounters();
+        }
         
         allOrders[key] = { ...data, status: currentStatus };
-        
         const orderElement = createOrderElement(key, data);
         commandesContainer.appendChild(orderElement);
       });
@@ -530,43 +556,32 @@
       db.ref("commandes").on("child_changed", (snapshot) => {
         const data = snapshot.val();
         const key = snapshot.key;
-        let currentStatus = data.etat || data.statut || "En attente";
+        let currentStatus = data.etat || data.statut;
         
-        // تغيير حالة "Livré" إلى "Sortie" إذا كانت موجودة
         if (currentStatus === "Livré") {
           currentStatus = "Sortie";
-          db.ref("commandes/" + key).update({ etat: "Sortie", statut: "Sortie" });
+          db.ref("commandes/" + key).update({ 
+            etat: "Sortie",
+            statut: "Sortie"
+          });
         }
         
         if (allOrders[key] && allOrders[key].status !== currentStatus) {
           statusCount[allOrders[key].status]--;
           statusCount[currentStatus]++;
           updateStatusCounters();
-          
           allOrders[key].status = currentStatus;
         }
         
-        const commandeDiv = document.getElementById(`commande-${key}`);
-        
-        if (commandeDiv) {
-          const select = commandeDiv.querySelector('.status-select');
-          if (select) {
-            select.value = currentStatus;
-          }
-          
-          commandeDiv.className = `commande status-${currentStatus.replace(/\s+/g, '-').toLowerCase()}`;
-          commandeDiv.dataset.status = currentStatus;
-        }
+        updateCommandeUI(key, currentStatus);
       });
       
       db.ref("commandes").on("child_removed", (snapshot) => {
         const key = snapshot.key;
-        
         if (allOrders[key]) {
           statusCount[allOrders[key].status]--;
           statusCount['total']--;
           updateStatusCounters();
-          
           delete allOrders[key];
         }
         
