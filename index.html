@@ -620,10 +620,7 @@
 
     <!-- Status Tabs -->
     <div class="status-tabs">
-      <button class="tab-btn active" data-status="all">
-        <i class="fas fa-list"></i> الكل
-      </button>
-      <button class="tab-btn" data-status="En attente">
+      <button class="tab-btn active" data-status="En attente">
         <i class="fas fa-clock"></i> في الانتظار
       </button>
       <button class="tab-btn" data-status="En préparation">
@@ -738,7 +735,7 @@
       allOrdersDivs.forEach(div => {
         const orderStatus = div.dataset.status;
         
-        if (status === 'all' || orderStatus === status) {
+        if (orderStatus === status) {
           div.style.display = 'block';
         } else {
           div.style.display = 'none';
@@ -1001,6 +998,9 @@
           location.reload();
         }
       });
+      
+      // Set "في الانتظار" as default active tab
+      document.querySelector('.tab-btn[data-status="En attente"]').click();
     }
     
     window.addEventListener('DOMContentLoaded', initApp);
