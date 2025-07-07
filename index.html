@@ -720,6 +720,9 @@
       </div>
       <div class="header-actions">
         <div class="clock" id="liveClock"></div>
+        <button class="btn btn-outline" id="open-drive-btn">
+          <i class="fas fa-folder-open"></i> فتح التقرير
+        </button>
         <button class="btn btn-outline">
           <i class="fas fa-print"></i> طباعة
         </button>
@@ -841,8 +844,30 @@
       'total': 0
     };
     
+    // Notification sounds
     const notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
     const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
+    
+    // Initialize audio context for better sound handling
+    function initAudioContext() {
+      // This helps with autoplay restrictions
+      document.addEventListener('click', function() {
+        notificationSound.volume = 0.5;
+        notificationSound.play().then(() => {
+          notificationSound.pause();
+          notificationSound.currentTime = 0;
+        }).catch(e => console.log("Audio initialization error:", e));
+        
+        statusChangeSound.volume = 0.5;
+        statusChangeSound.play().then(() => {
+          statusChangeSound.pause();
+          statusChangeSound.currentTime = 0;
+        }).catch(e => console.log("Audio initialization error:", e));
+        
+        // Remove the event after first interaction
+        document.removeEventListener('click', arguments.callee);
+      }, { once: true });
+    }
 
     // Authentication functions
     function initAuth() {
@@ -1056,7 +1081,9 @@
         badge.innerHTML = '<i class="fas fa-bell"></i>';
         div.querySelector('.order-header').appendChild(badge);
         
-        notificationSound.play().catch(e => console.log("Audio playback error:", e));
+        // Play notification sound for new orders
+        notificationSound.currentTime = 0;
+        notificationSound.play().catch(e => console.log("Notification sound error:", e));
         
         setTimeout(() => {
           badge.remove();
@@ -1081,7 +1108,9 @@
             statut: newStatus
           });
           
-          statusChangeSound.play().catch(e => console.log("Audio playback error:", e));
+          // Play status change sound
+          statusChangeSound.currentTime = 0;
+          statusChangeSound.play().catch(e => console.log("Status change sound error:", e));
         }
       });
       
@@ -1204,8 +1233,14 @@
     }
     
     function initApp() {
+      initAudioContext(); // Initialize audio handling
       initFirebaseListeners();
       initFilterTabs();
+      
+      // Google Drive button
+      document.getElementById('open-drive-btn').addEventListener('click', function() {
+        window.open('https://drive.google.com/open?id=1woZA28iDKnnq6Q_CaBrfP85MEqlo5I8g&authuser=0', '_blank');
+      });
       
       document.querySelector('.btn-outline').addEventListener('click', () => {
         window.print();
