@@ -959,9 +959,15 @@
     }
     
     function createOrderElement(key, data) {
-      let currentStatus = data.etat || data.statut || "En attente";
-      if (currentStatus === "Livré") currentStatus = "Sortie";
+      // الحالة الافتراضية للطلبات الجديدة
+      let currentStatus = "En attente";
       
+      // للطلبات الموجودة مسبقاً
+      if (data.etat || data.statut) {
+        currentStatus = data.etat || data.statut;
+        if (currentStatus === "Livré") currentStatus = "Sortie";
+      }
+
       const timeInfo = formatOrderTime(data.timestamp);
       
       const div = document.createElement("div");
@@ -1067,12 +1073,16 @@
         }, 1000);
         
         const newStatus = this.value;
-        db.ref("commandes/" + key).update({ 
-          etat: newStatus,
-          statut: newStatus
-        });
         
-        statusChangeSound.play().catch(e => console.log("Audio playback error:", e));
+        // تحديث الحالة في قاعدة البيانات فقط إذا تم تغييرها من "في الانتظار"
+        if (newStatus !== "En attente") {
+          db.ref("commandes/" + key).update({ 
+            etat: newStatus,
+            statut: newStatus
+          });
+          
+          statusChangeSound.play().catch(e => console.log("Audio playback error:", e));
+        }
       });
       
       div.querySelector('.action-btn.delete')?.addEventListener("click", function() {
@@ -1091,10 +1101,17 @@
         const data = snapshot.val();
         const key = snapshot.key;
         
-        let currentStatus = data.etat || data.statut || "En attente";
-        if (currentStatus === "Livré") currentStatus = "Sortie";
+        // الحالة الافتراضية للطلبات الجديدة
+        let currentStatus = "En attente";
         
-        if (!data.etat || !data.statut || data.etat === "Livré" || data.statut === "Livré") {
+        // للطلبات الموجودة مسبقاً
+        if (data.etat || data.statut) {
+          currentStatus = data.etat || data.statut;
+          if (currentStatus === "Livré") currentStatus = "Sortie";
+        }
+        
+        // تحديث الحالة في Firebase إذا كانت غير محددة أو "Livré"
+        if (!data.etat || !data.statut || currentStatus === "Livré") {
           db.ref("commandes/" + key).update({ 
             etat: currentStatus,
             statut: currentStatus
