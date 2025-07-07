@@ -52,6 +52,79 @@
       direction: rtl;
     }
 
+    /* Login Styles */
+    #login-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(15, 52, 96, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .login-box {
+      background-color: var(--white);
+      padding: 30px;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .login-logo .logo {
+      margin: 0 auto 15px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 1.8rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid var(--gray-dark);
+      border-radius: var(--radius-sm);
+      font-family: 'Tajawal', sans-serif;
+      transition: var(--transition);
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.2);
+    }
+
+    .btn-block {
+      width: 100%;
+      padding: 12px;
+    }
+
     .container {
       max-width: 1400px;
       margin: 0 auto;
@@ -193,23 +266,29 @@
       color: var(--danger);
     }
 
+    /* Status Card Backgrounds */
     .pending-card {
-      border-top: 4px solid var(--danger);
+      background: linear-gradient(135deg, #FFEBEE 0%, #FFFFFF 100%);
+      border-top: 4px solid #D32F2F;
     }
 
     .preparing-card {
-      border-top: 4px solid var(--warning);
+      background: linear-gradient(135deg, #FFF3E0 0%, #FFFFFF 100%);
+      border-top: 4px solid #F57C00;
     }
 
     .ready-card {
-      border-top: 4px solid var(--success);
+      background: linear-gradient(135deg, #E8F5E9 0%, #FFFFFF 100%);
+      border-top: 4px solid #388E3C;
     }
 
     .delivered-card {
-      border-top: 4px solid var(--info);
+      background: linear-gradient(135deg, #E3F2FD 0%, #FFFFFF 100%);
+      border-top: 4px solid #1976D2;
     }
 
     .total-card {
+      background: linear-gradient(135deg, #FFF8E1 0%, #FFFFFF 100%);
       border-top: 4px solid var(--gold);
     }
 
@@ -246,14 +325,46 @@
       border: 1px solid var(--gray);
     }
 
-    .tab-btn.active {
-      background-color: var(--primary);
-      color: white;
-      border-color: var(--primary);
+    .tab-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
-    .tab-btn:hover:not(.active) {
-      background-color: var(--gray);
+    .tab-btn[data-status="En attente"]:hover {
+      background-color: #FFEBEE;
+    }
+
+    .tab-btn[data-status="En préparation"]:hover {
+      background-color: #FFF3E0;
+    }
+
+    .tab-btn[data-status="Prêt"]:hover {
+      background-color: #E8F5E9;
+    }
+
+    .tab-btn[data-status="Sortie"]:hover {
+      background-color: #E3F2FD;
+    }
+
+    .tab-btn.active {
+      color: white;
+      border: none;
+    }
+
+    .tab-btn.active[data-status="En attente"] {
+      background-color: #D32F2F;
+    }
+
+    .tab-btn.active[data-status="En préparation"] {
+      background-color: #F57C00;
+    }
+
+    .tab-btn.active[data-status="Prêt"] {
+      background-color: #388E3C;
+    }
+
+    .tab-btn.active[data-status="Sortie"] {
+      background-color: #1976D2;
     }
 
     /* Orders Grid */
@@ -324,31 +435,36 @@
       margin-top: 3px;
     }
 
+    /* Status Badges with Background */
     .order-status {
-      padding: 3px 10px;
+      padding: 8px 12px;
       border-radius: var(--radius-sm);
       font-size: 0.8rem;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .status-pending {
-      background-color: rgba(233, 69, 96, 0.1);
-      color: var(--danger);
+      background-color: #FFEEEE;
+      color: #D32F2F;
+      border-right: 4px solid #D32F2F;
     }
 
     .status-preparing {
-      background-color: rgba(230, 126, 34, 0.1);
-      color: var(--warning);
+      background-color: #FFF3E0;
+      color: #F57C00;
+      border-right: 4px solid #F57C00;
     }
 
     .status-ready {
-      background-color: rgba(45, 157, 120, 0.1);
-      color: var(--success);
+      background-color: #E8F5E9;
+      color: #388E3C;
+      border-right: 4px solid #388E3C;
     }
 
     .status-delivered {
-      background-color: rgba(15, 52, 96, 0.1);
-      color: var(--info);
+      background-color: #E3F2FD;
+      color: #1976D2;
+      border-right: 4px solid #1976D2;
     }
 
     .order-body {
@@ -495,6 +611,11 @@
       100% { transform: scale(1); }
     }
 
+    /* Status Change Animation */
+    .order-card.status-changing {
+      animation: pulse 0.5s 2;
+    }
+
     /* Empty State */
     .empty-state {
       grid-column: 1 / -1;
@@ -547,11 +668,50 @@
         padding: 8px 12px;
         font-size: 0.9rem;
       }
+      
+      .login-box {
+        padding: 20px;
+        margin: 15px;
+      }
+      
+      .status-tabs {
+        gap: 5px;
+      }
+      
+      .tab-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <!-- Login Container -->
+  <div id="login-container">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo">ح</div>
+        <h2>تسجيل الدخول</h2>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-email">البريد الإلكتروني</label>
+          <input type="email" id="login-email" required>
+        </div>
+        <div class="form-group">
+          <label for="login-password">كلمة المرور</label>
+          <input type="password" id="login-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+        </button>
+      </form>
+      <div id="login-error" style="color: var(--danger); margin-top: 15px; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container" id="main-container" style="display: none;">
     <!-- Header -->
     <div class="header">
       <div class="header-title">
@@ -563,8 +723,11 @@
         <button class="btn btn-outline">
           <i class="fas fa-print"></i> طباعة
         </button>
-        <button class="btn btn-primary">
+        <button class="btn btn-primary" id="new-order-btn">
           <i class="fas fa-plus"></i> طلب جديد
+        </button>
+        <button class="btn btn-outline" id="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
         </button>
       </div>
     </div>
@@ -651,6 +814,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -658,13 +822,14 @@
       authDomain: "darhassna-484c3.firebaseapp.com",
       databaseURL: "https://darhassna-484c3-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "darhassna-484c3",
-      storageBucket: "darhassna-484c3.firebasestorage.app",
+      storageBucket: "darhassna-484c3.appspot.com",
       messagingSenderId: "141393162149",
       appId: "1:141393162149:web:0717227eac221f5ddfc24c"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const auth = firebase.auth();
     const ordersContainer = document.getElementById("orders-container");
     
     let allOrders = {};
@@ -678,6 +843,54 @@
     
     const notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
     const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
+
+    // Authentication functions
+    function initAuth() {
+      auth.onAuthStateChanged(function(user) {
+        if (user) {
+          document.getElementById('login-container').style.display = 'none';
+          document.getElementById('main-container').style.display = 'block';
+          initApp();
+        } else {
+          document.getElementById('login-container').style.display = 'flex';
+          document.getElementById('main-container').style.display = 'none';
+        }
+      });
+    }
+
+    function setupLogin() {
+      const loginForm = document.getElementById('login-form');
+      const loginError = document.getElementById('login-error');
+      
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        
+        auth.signInWithEmailAndPassword(email, password)
+          .then(() => {
+            loginError.style.display = 'none';
+          })
+          .catch((error) => {
+            loginError.textContent = getAuthErrorMessage(error);
+            loginError.style.display = 'block';
+          });
+      });
+    }
+
+    function getAuthErrorMessage(error) {
+      const messages = {
+        'auth/wrong-password': 'كلمة المرور غير صحيحة',
+        'auth/user-not-found': 'لا يوجد حساب مرتبط بهذا البريد الإلكتروني',
+        'auth/invalid-email': 'البريد الإلكتروني غير صالح',
+        'auth/too-many-requests': 'تم إجراء محاولات كثيرة جدًا. يرجى المحاولة مرة أخرى لاحقًا',
+        'auth/user-disabled': 'تم تعطيل هذا الحساب',
+        'default': 'حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى'
+      };
+      
+      return messages[error.code] || messages['default'];
+    }
 
     function updateClock() {
       const now = new Date();
@@ -734,12 +947,7 @@
       
       allOrdersDivs.forEach(div => {
         const orderStatus = div.dataset.status;
-        
-        if (orderStatus === status) {
-          div.style.display = 'block';
-        } else {
-          div.style.display = 'none';
-        }
+        div.style.display = orderStatus === status ? 'block' : 'none';
       });
       
       document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -751,7 +959,9 @@
     }
     
     function createOrderElement(key, data) {
-      const currentStatus = data.etat || data.statut || "En attente";
+      let currentStatus = data.etat || data.statut || "En attente";
+      if (currentStatus === "Livré") currentStatus = "Sortie";
+      
       const timeInfo = formatOrderTime(data.timestamp);
       
       const div = document.createElement("div");
@@ -773,14 +983,11 @@
         </div>
       `).join('');
       
-      let notesHTML = '';
-      if (data.notes && data.notes.trim() !== '') {
-        notesHTML = `
-          <div class="order-notes">
-            <strong>ملاحظة:</strong> ${data.notes}
-          </div>
-        `;
-      }
+      let notesHTML = data.notes && data.notes.trim() !== '' ? `
+        <div class="order-notes">
+          <strong>ملاحظة:</strong> ${data.notes}
+        </div>
+      ` : '';
       
       let statusClass = '';
       let statusText = '';
@@ -818,7 +1025,6 @@
           <div class="order-items">
             ${itemsHTML}
           </div>
-          
           ${notesHTML}
         </div>
         
@@ -853,6 +1059,13 @@
       }
       
       div.querySelector('.status-select').addEventListener("change", function() {
+        const card = this.closest('.order-card');
+        card.classList.add('status-changing');
+        
+        setTimeout(() => {
+          card.classList.remove('status-changing');
+        }, 1000);
+        
         const newStatus = this.value;
         db.ref("commandes/" + key).update({ 
           etat: newStatus,
@@ -878,24 +1091,16 @@
         const data = snapshot.val();
         const key = snapshot.key;
         
-        if (!data.etat && !data.statut) {
-          const updates = {
-            etat: "En attente",
-            statut: "En attente"
-          };
-          db.ref("commandes/" + key).update(updates);
-          data.etat = "En attente";
-          data.statut = "En attente";
-        }
+        let currentStatus = data.etat || data.statut || "En attente";
+        if (currentStatus === "Livré") currentStatus = "Sortie";
         
-        let currentStatus = data.etat || data.statut;
-        
-        if (currentStatus === "Livré") {
-          currentStatus = "Sortie";
+        if (!data.etat || !data.statut || data.etat === "Livré" || data.statut === "Livré") {
           db.ref("commandes/" + key).update({ 
-            etat: "Sortie",
-            statut: "Sortie"
+            etat: currentStatus,
+            statut: currentStatus
           });
+          data.etat = currentStatus;
+          data.statut = currentStatus;
         }
         
         if (!allOrders[key]) {
@@ -907,7 +1112,6 @@
         allOrders[key] = { ...data, status: currentStatus };
         const orderElement = createOrderElement(key, data);
         
-        // Remove empty state if it exists
         const emptyState = document.querySelector('.empty-state');
         if (emptyState) {
           ordersContainer.innerHTML = '';
@@ -957,7 +1161,6 @@
           orderElement.remove();
         }
         
-        // Show empty state if no orders left
         if (Object.keys(allOrders).length === 0) {
           ordersContainer.innerHTML = `
             <div class="empty-state">
@@ -987,23 +1190,31 @@
       initFirebaseListeners();
       initFilterTabs();
       
-      // Print button
       document.querySelector('.btn-outline').addEventListener('click', () => {
         window.print();
       });
       
-      // Refresh button in empty state
+      document.getElementById('logout-btn').addEventListener('click', function() {
+        auth.signOut().then(() => {
+          // Sign-out successful
+        }).catch((error) => {
+          console.error('Logout error:', error);
+        });
+      });
+      
       document.addEventListener('click', (e) => {
         if (e.target.closest('.empty-state .btn-primary')) {
           location.reload();
         }
       });
       
-      // Set "في الانتظار" as default active tab
       document.querySelector('.tab-btn[data-status="En attente"]').click();
     }
     
-    window.addEventListener('DOMContentLoaded', initApp);
+    window.addEventListener('DOMContentLoaded', function() {
+      initAuth();
+      setupLogin();
+    });
   </script>
 </body>
 </html>
