@@ -219,6 +219,15 @@
       background-color: var(--gray);
     }
 
+    .btn-reset {
+      background-color: var(--danger);
+      color: white;
+    }
+    
+    .btn-reset:hover {
+      background-color: #d32f2f;
+    }
+
     .clock {
       background-color: var(--white);
       padding: 10px 20px;
@@ -830,6 +839,47 @@
       box-shadow: var(--shadow-sm);
     }
 
+    /* Confirm Dialog Styles */
+    .confirm-dialog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      display: none;
+    }
+    
+    .confirm-box {
+      background-color: white;
+      padding: 30px;
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 400px;
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .confirm-title {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      color: var(--danger);
+      text-align: center;
+    }
+    
+    .confirm-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .confirm-actions button {
+      flex: 1;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .header {
@@ -951,6 +1001,9 @@
         </button>
         <button class="btn btn-primary" id="menu-btn">
           <i class="fas fa-utensils"></i> القائمة
+        </button>
+        <button class="btn btn-reset" id="reset-btn">
+          <i class="fas fa-redo"></i> إعادة تشغيل
         </button>
         <button class="btn btn-outline" id="logout-btn">
           <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
@@ -1076,6 +1129,32 @@
           <h3>لا توجد طلبات في السجل</h3>
           <p class="empty-text">سيتم عرض الطلبات المنتهية هنا</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Reset Dialog -->
+  <div class="confirm-dialog" id="confirm-reset-dialog">
+    <div class="confirm-box">
+      <div class="confirm-title">
+        <i class="fas fa-exclamation-triangle"></i> تأكيد إعادة التشغيل
+      </div>
+      <div class="form-group">
+        <label for="reset-email">البريد الإلكتروني</label>
+        <input type="email" id="reset-email" required>
+      </div>
+      <div class="form-group">
+        <label for="reset-password">كلمة المرور</label>
+        <input type="password" id="reset-password" required>
+      </div>
+      <div id="reset-error" style="color: var(--danger); margin-top: 15px; display: none;"></div>
+      <div class="confirm-actions">
+        <button class="btn btn-outline" id="cancel-reset-btn">
+          إلغاء
+        </button>
+        <button class="btn btn-reset" id="confirm-reset-btn">
+          تأكيد
+        </button>
       </div>
     </div>
   </div>
@@ -1843,6 +1922,60 @@
       });
     }
     
+    function resetApplication() {
+      // عرض مربع حوار التأكيد
+      document.getElementById('confirm-reset-dialog').style.display = 'flex';
+      document.getElementById('reset-error').style.display = 'none';
+      
+      // إعداد أحداث الأزرار
+      document.getElementById('cancel-reset-btn').onclick = function() {
+        document.getElementById('confirm-reset-dialog').style.display = 'none';
+      };
+      
+      document.getElementById('confirm-reset-btn').onclick = function() {
+        const email = document.getElementById('reset-email').value;
+        const password = document.getElementById('reset-password').value;
+        
+        // التحقق من بيانات الاعتماد
+        auth.signInWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            // إذا نجح تسجيل الدخول، قم بإعادة التعيين
+            document.getElementById('confirm-reset-dialog').style.display = 'none';
+            
+            // مسح جميع الطلبيات والإحصائيات
+            db.ref("commandes").remove()
+              .then(() => {
+                console.log("تم مسح جميع الطلبيات");
+                // إعادة تعيين العداد
+                resetStatusCounters();
+                // إخفاء قسم الطلبيات الجديدة
+                newOrdersSection.style.display = 'none';
+                // عرض حالة فارغة
+                ordersContainer.innerHTML = `
+                  <div class="empty-state">
+                    <div class="empty-icon">
+                      <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <h3>لا توجد طلبات حالياً</h3>
+                    <p class="empty-text">تم إعادة تشغيل النظام بنجاح</p>
+                    <button class="btn btn-primary">
+                      <i class="fas fa-sync-alt"></i> تحديث
+                    </button>
+                  </div>
+                `;
+              })
+              .catch(error => {
+                console.error("Error resetting orders:", error);
+                alert("حدث خطأ أثناء إعادة التشغيل");
+              });
+          })
+          .catch((error) => {
+            document.getElementById('reset-error').textContent = getAuthErrorMessage(error);
+            document.getElementById('reset-error').style.display = 'block';
+          });
+      };
+    }
+
     function initApp() {
       initFirebaseListeners();
       initFilterTabs();
@@ -1879,6 +2012,9 @@
       
       // حدث طباعة السجل
       document.getElementById('print-history-btn').addEventListener('click', printHistory);
+      
+      // حدث إعادة التشغيل
+      document.getElementById('reset-btn').addEventListener('click', resetApplication);
       
       document.addEventListener('click', (e) => {
         if (e.target.closest('.empty-state .btn-primary')) {
