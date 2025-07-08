@@ -305,6 +305,50 @@
       border-top: 4px solid var(--gold);
     }
 
+    /* New Orders Section */
+    .new-orders-section {
+      background-color: #fff5f7;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 30px;
+      border-top: 4px solid var(--primary);
+      position: relative;
+    }
+
+    .new-orders-section h2 {
+      font-size: 1.4rem;
+      color: var(--primary);
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px dashed var(--gray);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .new-orders-section::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(233,69,96,0.05) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+    }
+
+    .new-order-highlight {
+      animation: highlightPulse 2s infinite;
+      border: 2px solid var(--primary);
+    }
+
+    @keyframes highlightPulse {
+      0% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(233, 69, 96, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0); }
+    }
+
     /* Status Tabs */
     .status-tabs {
       display: flex;
@@ -889,6 +933,12 @@
       </div>
     </div>
 
+    <!-- New Orders Section -->
+    <div class="new-orders-section" id="new-orders-section">
+      <h2><i class="fas fa-bell"></i> الطلبيات الجديدة</h2>
+      <div class="orders-grid" id="new-orders-container"></div>
+    </div>
+
     <!-- Status Tabs -->
     <div class="status-tabs">
       <button class="tab-btn active" data-status="En attente">
@@ -958,9 +1008,12 @@
     const db = firebase.database();
     const auth = firebase.auth();
     const ordersContainer = document.getElementById("orders-container");
+    const newOrdersContainer = document.getElementById("new-orders-container");
+    const newOrdersSection = document.getElementById("new-orders-section");
     const historyContainer = document.getElementById("history-container");
     
     let allOrders = {};
+    let newOrders = {};
     let ordersHistory = {};
     const playedNotifications = new Set();
     const statusCount = {
@@ -1147,12 +1200,12 @@
       }
     }
     
-    function createOrderElement(key, data) {
+    function createOrderElement(key, data, isNew = false) {
       let currentStatus = data.etat || data.statut || "En attente";
       if (currentStatus === "Livré") currentStatus = "Sortie";
 
       const timeInfo = formatOrderTime(data.timestamp);
-      const isNewOrder = Date.now() - data.timestamp < 30000;
+      const isBrandNew = Date.now() - data.timestamp < 30000;
 
       const div = document.createElement("div");
       div.className = `order-card`;
@@ -1160,8 +1213,12 @@
       div.dataset.key = key;
       div.dataset.created = data.timestamp;
       
-      if (isNewOrder) {
+      if (isBrandNew) {
         div.classList.add('new');
+      }
+      
+      if (isNew) {
+        div.classList.add('new-order-highlight');
       }
       
       let itemsHTML = data.commandes.map(item => `
@@ -1235,7 +1292,7 @@
         </div>
       `;
       
-      if (isNewOrder && !playedNotifications.has(key)) {
+      if (isBrandNew && !playedNotifications.has(key)) {
         const badge = document.createElement('div');
         badge.className = 'new-badge';
         badge.innerHTML = '<i class="fas fa-bell"></i>';
@@ -1323,6 +1380,43 @@
       return div;
     }
     
+    function manageNewOrders(key, data) {
+      const isNew = Date.now() - data.timestamp < 5 * 60 * 1000; // 5 دقائق
+      
+      if (isNew) {
+        // تأكد من أن الطلبية محددة كـ "في الانتظار"
+        if (data.etat !== "En attente" || data.statut !== "En attente") {
+          db.ref("commandes/" + key).update({ 
+            etat: "En attente",
+            statut: "En attente"
+          });
+          data.etat = "En attente";
+          data.statut = "En attente";
+        }
+        
+        newOrders[key] = data;
+        const orderElement = createOrderElement(key, data, true);
+        newOrdersContainer.prepend(orderElement);
+        
+        // إظهار قسم الطلبيات الجديدة إذا كان مخفياً
+        newOrdersSection.style.display = 'block';
+        
+        // نقل الطلبية بعد 5 دقائق إلى القائمة الرئيسية
+        setTimeout(() => {
+          if (newOrders[key]) {
+            delete newOrders[key];
+            const element = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
+            if (element) element.remove();
+            
+            // إخفاء قسم الطلبيات الجديدة إذا لم يعد هناك طلبيات جديدة
+            if (Object.keys(newOrders).length === 0) {
+              newOrdersSection.style.display = 'none';
+            }
+          }
+        }, 5 * 60 * 1000);
+      }
+    }
+    
     function updateHistorySection(historyData) {
       historyContainer.innerHTML = '';
       
@@ -1352,6 +1446,7 @@
     
     function initFirebaseListeners() {
       resetStatusCounters();
+      newOrdersSection.style.display = 'none';
 
       db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
         const data = snapshot.val();
@@ -1382,12 +1477,15 @@
         allOrders[key] = { ...data, status: currentStatus };
         const orderElement = createOrderElement(key, data);
         
-        const emptyState = document.querySelector('.empty-state');
+        const emptyState = document.querySelector('#orders-container .empty-state');
         if (emptyState) {
           ordersContainer.innerHTML = '';
         }
         
         ordersContainer.prepend(orderElement);
+        
+        // إدارة الطلبيات الجديدة
+        manageNewOrders(key, data);
         
         // تصفية الطلبات تلقائياً حسب التبويب النشط
         const activeTab = document.querySelector('.tab-btn.active');
@@ -1432,6 +1530,15 @@
             newElement.style.display = 'none';
           }
         }
+        
+        // تحديث الطلبيات الجديدة إذا كانت موجودة
+        if (newOrders[key]) {
+          const newOrderElement = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
+          if (newOrderElement) {
+            const updatedElement = createOrderElement(key, data, true);
+            newOrderElement.replaceWith(updatedElement);
+          }
+        }
       });
       
       db.ref("commandes").on("child_removed", (snapshot) => {
@@ -1441,6 +1548,16 @@
           statusCount['total']--;
           updateStatusCounters();
           delete allOrders[key];
+        }
+        
+        if (newOrders[key]) {
+          delete newOrders[key];
+          const newOrderElement = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
+          if (newOrderElement) newOrderElement.remove();
+          
+          if (Object.keys(newOrders).length === 0) {
+            newOrdersSection.style.display = 'none';
+          }
         }
         
         const orderElement = document.querySelector(`.order-card[data-key="${key}"]`);
