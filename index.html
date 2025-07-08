@@ -854,6 +854,9 @@
           <label for="login-password">كلمة المرور</label>
           <input type="password" id="login-password" required>
         </div>
+        <button class="btn btn-primary btn-block" id="menu-btn-login" style="margin-bottom: 15px;">
+          <i class="fas fa-utensils"></i> القائمة
+        </button>
         <button type="submit" class="btn btn-primary btn-block">
           <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
         </button>
@@ -877,6 +880,9 @@
         </button>
         <button class="btn btn-primary" id="modification-btn">
           <i class="fas fa-edit"></i> تعديل
+        </button>
+        <button class="btn btn-primary" id="menu-btn">
+          <i class="fas fa-utensils"></i> القائمة
         </button>
         <button class="btn btn-outline" id="logout-btn">
           <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
@@ -1085,6 +1091,10 @@
             loginError.textContent = getAuthErrorMessage(error);
             loginError.style.display = 'block';
           });
+      });
+
+      document.getElementById('menu-btn-login').addEventListener('click', function() {
+        window.location.href = 'https://tawfikaben.github.io/Menu/';
       });
     }
 
@@ -1608,6 +1618,10 @@
 
       document.getElementById('modification-btn').addEventListener('click', function() {
         window.open('https://tawfikaben.github.io/Modified-/', '_blank');
+      });
+      
+      document.getElementById('menu-btn').addEventListener('click', function() {
+        window.location.href = 'https://tawfikaben.github.io/Menu/';
       });
       
       document.getElementById('logout-btn').addEventListener('click', function() {
