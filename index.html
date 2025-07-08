@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تتبع طلبيات دار حسنا</title>
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -52,7 +50,7 @@
       direction: rtl;
     }
 
-    /* Login Styles مع خلفية الطاجين */
+    /* Login Styles */
     #login-container {
       position: fixed;
       top: 0;
@@ -1077,6 +1075,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const auth = firebase.auth();
+    const ordersStatusRef = db.ref("ordersStatus");
+    
     const ordersContainer = document.getElementById("orders-container");
     const newOrdersContainer = document.getElementById("new-orders-container");
     const newOrdersSection = document.getElementById("new-orders-section");
@@ -1094,10 +1094,8 @@
       'total': 0
     };
     
-    // متغير للتحكم في الإشعارات الصوتية
     let isNotificationPlaying = false;
     
-    // دالة تشغيل الإشعار الصوتي بدون تداخل
     function playNotificationSound() {
       if (!isNotificationPlaying) {
         isNotificationPlaying = true;
@@ -1107,7 +1105,7 @@
           .then(() => {
             setTimeout(() => {
               isNotificationPlaying = false;
-            }, 4000); // 4 ثواني مدة الصوت
+            }, 4000);
           })
           .catch(e => {
             console.log("Error playing notification:", e);
@@ -1116,19 +1114,17 @@
       }
     }
     
-    // دالة تشغيل صوت تغيير الحالة
     function playStatusChangeSound() {
       const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
       statusChangeSound.volume = 0.3;
       statusChangeSound.play().catch(e => console.log("Status sound error:", e));
     }
 
-    // دالة لحساب الوقت المتبقي وتحديث العداد
     function updateTimeRemaining() {
       const now = new Date();
       const nextDay = new Date(now);
       nextDay.setDate(nextDay.getDate() + 1);
-      nextDay.setHours(0, 0, 0, 0); // منتصف الليل القادم
+      nextDay.setHours(0, 0, 0, 0);
       
       const diff = nextDay - now;
       const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -1139,12 +1135,10 @@
         `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    // دالة لتحديث عدد المعاملات
     function updateTransactionsCount(count) {
       document.getElementById('transactions-count').textContent = count;
     }
 
-    // دالة لطباعة السجل
     function setupPrintHistory() {
       document.getElementById('print-history-btn').addEventListener('click', function() {
         const printContent = `
@@ -1191,7 +1185,50 @@
       });
     }
 
-    // Authentication functions
+    function saveOrdersState() {
+      const ordersState = {};
+      Object.keys(allOrders).forEach(key => {
+        ordersState[key] = {
+          status: allOrders[key].status,
+          timestamp: allOrders[key].timestamp
+        };
+      });
+      
+      return ordersStatusRef.set(ordersState)
+        .then(() => console.log("تم حفظ حالات الطلبات في Firebase"))
+        .catch(error => console.error("خطأ في حفظ الحالات:", error));
+    }
+
+    function loadOrdersState() {
+      return ordersStatusRef.once('value')
+        .then(snapshot => snapshot.val() || {})
+        .catch(error => {
+          console.error("خطأ في تحميل الحالات:", error);
+          return {};
+        });
+    }
+
+    function cleanupOldStatuses() {
+      const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+      
+      return ordersStatusRef.once('value').then(snapshot => {
+        const statuses = snapshot.val() || {};
+        const updatedStatuses = {};
+        
+        Object.keys(statuses).forEach(key => {
+          if (statuses[key].timestamp > twentyFourHoursAgo) {
+            updatedStatuses[key] = statuses[key];
+          }
+        });
+        
+        return ordersStatusRef.set(updatedStatuses);
+      }).then(() => {
+        console.log("تم تنظيف الحالات القديمة");
+      }).catch(error => {
+        console.error("Error cleaning up statuses:", error);
+      });
+    }
+
     function initAuth() {
       auth.onAuthStateChanged(function(user) {
         if (user) {
@@ -1250,9 +1287,6 @@
       document.getElementById('liveClock').innerHTML = `<span>${dateString}</span><span>${timeString}</span>`;
     }
 
-    setInterval(updateClock, 1000);
-    updateClock();
-
     function formatOrderTime(timestamp) {
       const now = new Date();
       const orderDate = new Date(timestamp);
@@ -1306,18 +1340,15 @@
     function filterOrders(status) {
       const allOrdersDivs = document.querySelectorAll('.order-card');
       
-      // إخفاء جميع الطلبات أولاً
       allOrdersDivs.forEach(div => {
         div.style.display = 'none';
       });
       
-      // عرض الطلبات التي تطابق الحالة المطلوبة
       const matchingOrders = document.querySelectorAll(`.order-card[data-status="${status}"]`);
       matchingOrders.forEach(div => {
         div.style.display = 'block';
       });
       
-      // تحديث أزرار التبويب
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.status === status) {
@@ -1325,7 +1356,6 @@
         }
       });
       
-      // إذا لم توجد طلبات، عرض حالة فارغة
       if (matchingOrders.length === 0) {
         ordersContainer.innerHTML = `
           <div class="empty-state">
@@ -1449,24 +1479,19 @@
         }, 30000);
       }
       
-      // تعديل مستمع تغيير الحالة ليشمل تحديث جميع العناصر
       div.querySelector('.status-select').addEventListener("change", function() {
         const newStatus = this.value;
         const key = this.dataset.key;
         
-        // تحديث Firebase أولاً
         db.ref("commandes/" + key).update({ 
           etat: newStatus,
           statut: newStatus
         }).then(() => {
-          // بعد التحديث الناجح في Firebase
           playStatusChangeSound();
           
-          // تحديث جميع عناصر هذه الطلبية في الواجهة
           document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
             card.dataset.status = newStatus;
             
-            // تحديث نص وعناصر الحالة
             let statusClass = '';
             let statusText = '';
             
@@ -1489,21 +1514,20 @@
                 break;
             }
             
-            // تحديث عنصر الحالة
             const statusElement = card.querySelector('.order-status');
             statusElement.className = `order-status ${statusClass}`;
             statusElement.textContent = statusText;
             
-            // تحديث القائمة المنسدلة لتكون متزامنة
             const selectElement = card.querySelector('.status-select');
             selectElement.value = newStatus;
             
-            // إضافة تأثير بسيط للإشارة للتغيير
             card.classList.add('status-changing');
             setTimeout(() => {
               card.classList.remove('status-changing');
             }, 1000);
           });
+          
+          return saveOrdersState();
         }).catch(error => {
           console.error("Error updating status:", error);
           alert("حدث خطأ أثناء تحديث الحالة. يرجى المحاولة مرة أخرى.");
@@ -1574,10 +1598,9 @@
     }
     
     function manageNewOrders(key, data) {
-      const isNew = Date.now() - data.timestamp < 5 * 60 * 1000; // 5 دقائق
+      const isNew = Date.now() - data.timestamp < 5 * 60 * 1000;
       
       if (isNew) {
-        // تأكد من أن الطلبية محددة كـ "في الانتظار"
         if (data.etat !== "En attente" || data.statut !== "En attente") {
           db.ref("commandes/" + key).update({ 
             etat: "En attente",
@@ -1591,17 +1614,14 @@
         const orderElement = createOrderElement(key, data, true);
         newOrdersContainer.prepend(orderElement);
         
-        // إظهار قسم الطلبيات الجديدة إذا كان مخفياً
         newOrdersSection.style.display = 'block';
         
-        // نقل الطلبية بعد 5 دقائق إلى القائمة الرئيسية
         setTimeout(() => {
           if (newOrders[key]) {
             delete newOrders[key];
             const element = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
             if (element) element.remove();
             
-            // إخفاء قسم الطلبيات الجديدة إذا لم يعد هناك طلبيات جديدة
             if (Object.keys(newOrders).length === 0) {
               newOrdersSection.style.display = 'none';
             }
@@ -1618,7 +1638,6 @@
         .filter(([key, order]) => order.timestamp >= twentyFourHoursAgo)
         .sort((a, b) => b[1].timestamp - a[1].timestamp);
       
-      // تحديث عدد المعاملات
       updateTransactionsCount(recentHistory.length);
       
       if (recentHistory.length === 0) {
@@ -1644,132 +1663,134 @@
       resetStatusCounters();
       newOrdersSection.style.display = 'none';
 
-      db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
-        const data = snapshot.val();
-        const key = snapshot.key;
-        
-        let currentStatus = data.etat || data.statut || "En attente";
-        if (currentStatus === "Livré") currentStatus = "Sortie";
-        
-        // تأكيد أن الطلب له حالة صحيحة
-        if (!data.etat || !data.statut || currentStatus === "Livré") {
-          db.ref("commandes/" + key).update({ 
-            etat: "En attente",
-            statut: "En attente"
-          });
-          data.etat = "En attente";
-          data.statut = "En attente";
-          currentStatus = "En attente";
-        }
-        
-        if (!allOrders[key]) {
-          statusCount[currentStatus]++;
-          statusCount['total']++;
-          updateStatusCounters();
-        }
-        
-        allOrders[key] = { ...data, status: currentStatus };
-        const orderElement = createOrderElement(key, data);
-        
-        const emptyState = document.querySelector('#orders-container .empty-state');
-        if (emptyState) {
-          ordersContainer.innerHTML = '';
-        }
-        
-        ordersContainer.prepend(orderElement);
-        
-        // إدارة الطلبيات الجديدة
-        manageNewOrders(key, data);
-        
-        // تصفية الطلبات تلقائياً حسب التبويب النشط
-        const activeTab = document.querySelector('.tab-btn.active');
-        if (activeTab && activeTab.dataset.status !== currentStatus) {
-          orderElement.style.display = 'none';
-        }
-      });
-      
-      db.ref("commandes").on("child_changed", (snapshot) => {
-        const data = snapshot.val();
-        const key = snapshot.key;
-        let currentStatus = data.etat || data.statut;
-        
-        if (currentStatus === "Livré") {
-          currentStatus = "Sortie";
-          db.ref("commandes/" + key).update({ 
-            etat: "Sortie",
-            statut: "Sortie"
-          });
-        }
-        
-        if (allOrders[key] && allOrders[key].status !== currentStatus && currentStatus === "Sortie") {
-          ordersHistory[key] = { ...data, status: currentStatus };
-          db.ref("history/" + key).set(data);
-        }
-        
-        if (allOrders[key] && allOrders[key].status !== currentStatus) {
-          statusCount[allOrders[key].status]--;
-          statusCount[currentStatus]++;
-          updateStatusCounters();
-          allOrders[key].status = currentStatus;
-        }
-        
-        // تحديث جميع عناصر هذه الطلبية في الواجهة
-        document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
-          const newElement = createOrderElement(key, data, card.parentElement.id === 'new-orders-container');
-          card.replaceWith(newElement);
+      loadOrdersState().then(savedState => {
+        db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
+          const data = snapshot.val();
+          const key = snapshot.key;
           
-          // تصفية الطلبات تلقائياً حسب التبويب النشط
+          let currentStatus = data.etat || data.statut || "En attente";
+          if (currentStatus === "Livré") currentStatus = "Sortie";
+          
+          if (savedState && savedState[key]) {
+            currentStatus = savedState[key].status;
+            db.ref("commandes/" + key).update({ 
+              etat: currentStatus,
+              statut: currentStatus
+            });
+          }
+          
+          if (!allOrders[key]) {
+            statusCount[currentStatus]++;
+            statusCount['total']++;
+            updateStatusCounters();
+          }
+          
+          allOrders[key] = { ...data, status: currentStatus };
+          const orderElement = createOrderElement(key, data);
+          
+          const emptyState = document.querySelector('#orders-container .empty-state');
+          if (emptyState) {
+            ordersContainer.innerHTML = '';
+          }
+          
+          ordersContainer.prepend(orderElement);
+          manageNewOrders(key, data);
+          
           const activeTab = document.querySelector('.tab-btn.active');
           if (activeTab && activeTab.dataset.status !== currentStatus) {
-            newElement.style.display = 'none';
+            orderElement.style.display = 'none';
           }
+          
+          saveOrdersState();
+        });
+
+        db.ref("commandes").on("child_changed", (snapshot) => {
+          const data = snapshot.val();
+          const key = snapshot.key;
+          let currentStatus = data.etat || data.statut;
+          
+          if (currentStatus === "Livré") {
+            currentStatus = "Sortie";
+            db.ref("commandes/" + key).update({ 
+              etat: "Sortie",
+              statut: "Sortie"
+            });
+          }
+          
+          if (allOrders[key] && allOrders[key].status !== currentStatus && currentStatus === "Sortie") {
+            ordersHistory[key] = { ...data, status: currentStatus };
+            db.ref("history/" + key).set(data);
+          }
+          
+          if (allOrders[key] && allOrders[key].status !== currentStatus) {
+            statusCount[allOrders[key].status]--;
+            statusCount[currentStatus]++;
+            updateStatusCounters();
+            allOrders[key].status = currentStatus;
+          }
+          
+          document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
+            const newElement = createOrderElement(key, data, card.parentElement.id === 'new-orders-container');
+            card.replaceWith(newElement);
+            
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab && activeTab.dataset.status !== currentStatus) {
+              newElement.style.display = 'none';
+            }
+          });
+
+          saveOrdersState();
+        });
+
+        db.ref("commandes").on("child_removed", (snapshot) => {
+          const key = snapshot.key;
+          if (allOrders[key]) {
+            statusCount[allOrders[key].status]--;
+            statusCount['total']--;
+            updateStatusCounters();
+            delete allOrders[key];
+          }
+          
+          if (newOrders[key]) {
+            delete newOrders[key];
+            const newOrderElement = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
+            if (newOrderElement) newOrderElement.remove();
+            
+            if (Object.keys(newOrders).length === 0) {
+              newOrdersSection.style.display = 'none';
+            }
+          }
+          
+          const orderElement = document.querySelector(`.order-card[data-key="${key}"]`);
+          if (orderElement) {
+            orderElement.remove();
+          }
+          
+          if (Object.keys(allOrders).length === 0) {
+            ordersContainer.innerHTML = `
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h3>لا توجد طلبات حالياً</h3>
+                <p class="empty-text">سيظهر هنا أي طلبات جديدة يتم تقديمها</p>
+                <button class="btn btn-primary">
+                  <i class="fas fa-sync-alt"></i> تحديث
+                </button>
+              </div>
+            `;
+          }
+
+          saveOrdersState();
         });
       });
-      
-      db.ref("commandes").on("child_removed", (snapshot) => {
-        const key = snapshot.key;
-        if (allOrders[key]) {
-          statusCount[allOrders[key].status]--;
-          statusCount['total']--;
-          updateStatusCounters();
-          delete allOrders[key];
-        }
-        
-        if (newOrders[key]) {
-          delete newOrders[key];
-          const newOrderElement = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
-          if (newOrderElement) newOrderElement.remove();
-          
-          if (Object.keys(newOrders).length === 0) {
-            newOrdersSection.style.display = 'none';
-          }
-        }
-        
-        const orderElement = document.querySelector(`.order-card[data-key="${key}"]`);
-        if (orderElement) {
-          orderElement.remove();
-        }
-        
-        if (Object.keys(allOrders).length === 0) {
-          ordersContainer.innerHTML = `
-            <div class="empty-state">
-              <div class="empty-icon">
-                <i class="fas fa-clipboard-list"></i>
-              </div>
-              <h3>لا توجد طلبات حالياً</h3>
-              <p class="empty-text">سيظهر هنا أي طلبات جديدة يتم تقديمها</p>
-              <button class="btn btn-primary">
-                <i class="fas fa-sync-alt"></i> تحديث
-              </button>
-            </div>
-          `;
-        }
-      });
-      
+
       db.ref("history").orderByChild("timestamp").limitToLast(50).on("value", (snapshot) => {
         const historyData = snapshot.val() || {};
         updateHistorySection(historyData);
       });
+
+      cleanupOldStatuses();
     }
     
     function initFilterTabs() {
@@ -1783,8 +1804,6 @@
     function initApp() {
       initFirebaseListeners();
       initFilterTabs();
-      
-      // تصفية الطلبات بحالة "في الانتظار" عند التحميل
       filterOrders('En attente');
       
       document.getElementById('print-btn').addEventListener('click', () => {
@@ -1800,7 +1819,9 @@
       });
       
       document.getElementById('logout-btn').addEventListener('click', function() {
-        auth.signOut();
+        saveOrdersState().then(() => {
+          auth.signOut();
+        });
       });
       
       document.getElementById('clear-history-btn').addEventListener('click', function() {
@@ -1811,11 +1832,10 @@
         }
       });
       
-      // تحديث العداد كل ثانية
+      setInterval(updateClock, 1000);
+      updateClock();
       setInterval(updateTimeRemaining, 1000);
       updateTimeRemaining();
-
-      // إعداد زر طباعة السجل
       setupPrintHistory();
       
       document.addEventListener('click', (e) => {
