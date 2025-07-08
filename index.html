@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تتبع طلبيات دار حسنا</title>
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -50,7 +52,7 @@
       direction: rtl;
     }
 
-    /* Login Styles */
+    /* Login Styles مع خلفية الطاجين */
     #login-container {
       position: fixed;
       top: 0;
@@ -783,35 +785,49 @@
       margin-top: 5px;
     }
 
-    /* History Stats */
-    .history-stats {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      margin-bottom: 20px;
-      padding: 15px;
-      background-color: var(--white);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-sm);
-      flex-wrap: wrap;
-    }
-
-    .history-counter {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    /* Countdown Timer Styles */
+    .countdown-timer {
+      background-color: var(--secondary);
+      color: white;
       padding: 8px 15px;
-      background-color: var(--gray);
       border-radius: var(--radius-sm);
       font-weight: 500;
+      margin-left: 10px;
+      display: inline-flex;
+      align-items: center;
     }
 
-    .history-counter i {
-      color: var(--primary);
+    .countdown-timer i {
+      margin-left: 8px;
     }
 
-    #print-history-btn {
-      margin-right: auto;
+    .print-history-btn {
+      background-color: var(--primary);
+      color: white;
+      padding: 8px 15px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-right: 10px;
+    }
+
+    .print-history-btn:hover {
+      background-color: var(--primary-light);
+    }
+
+    .history-header-controls {
+      display: flex;
+      align-items: center;
+    }
+
+    .history-stats {
+      background-color: var(--white);
+      padding: 10px 15px;
+      border-radius: var(--radius-sm);
+      margin-left: 10px;
+      font-weight: 500;
+      box-shadow: var(--shadow-sm);
     }
 
     /* Responsive */
@@ -838,15 +854,23 @@
       .history-grid {
         grid-template-columns: 1fr;
       }
-      
-      .history-stats {
+
+      .history-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 15px;
       }
-      
-      #print-history-btn {
-        margin-right: 0;
-        margin-top: 10px;
+
+      .history-header-controls {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .countdown-timer, .print-history-btn, .clear-history-btn, .history-stats {
+        margin: 0;
+        flex-grow: 1;
+        text-align: center;
       }
     }
 
@@ -873,10 +897,10 @@
         padding: 8px 12px;
         font-size: 0.8rem;
       }
-      
-      .history-counter {
-        padding: 6px 10px;
-        font-size: 0.9rem;
+
+      .history-header-controls {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
   </style>
@@ -1023,28 +1047,27 @@
     <div class="history-section" id="history-section">
       <div class="history-header">
         <h2 class="history-title"><i class="fas fa-history"></i> سجل الطلبيات (آخر 24 ساعة)</h2>
-        <button class="clear-history-btn" id="clear-history-btn">
-          <i class="fas fa-trash"></i> مسح السجل
-        </button>
-      </div>
-      
-      <!-- History Stats Section -->
-      <div class="history-stats">
-        <div class="history-counter">
-          <i class="fas fa-clock"></i>
-          <span>الوقت المتبقي: </span>
-          <span id="time-remaining">24:00:00</span>
+        <div class="history-header-controls">
+          <div class="history-stats">
+            <i class="fas fa-file-invoice-dollar"></i> 
+            <span id="history-total-amount">0</span> درهم
+          </div>
+          <div class="history-stats">
+            <i class="fas fa-list-ol"></i> 
+            <span id="history-total-orders">0</span> طلبية
+          </div>
+          <div class="countdown-timer" id="history-countdown">
+            <i class="fas fa-clock"></i> 
+            <span>24:00:00</span>
+          </div>
+          <button class="print-history-btn" id="print-history-btn">
+            <i class="fas fa-print"></i> طباعة السجل
+          </button>
+          <button class="clear-history-btn" id="clear-history-btn">
+            <i class="fas fa-trash"></i> مسح السجل
+          </button>
         </div>
-        <div class="history-counter">
-          <i class="fas fa-receipt"></i>
-          <span>عدد المعاملات: </span>
-          <span id="transactions-count">0</span>
-        </div>
-        <button class="btn btn-outline" id="print-history-btn">
-          <i class="fas fa-print"></i> طباعة السجل
-        </button>
       </div>
-      
       <div class="history-grid" id="history-container">
         <div class="empty-state">
           <div class="empty-icon">
@@ -1075,8 +1098,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const auth = firebase.auth();
-    const ordersStatusRef = db.ref("ordersStatus");
-    
     const ordersContainer = document.getElementById("orders-container");
     const newOrdersContainer = document.getElementById("new-orders-container");
     const newOrdersSection = document.getElementById("new-orders-section");
@@ -1094,8 +1115,15 @@
       'total': 0
     };
     
+    // متغيرات العداد
+    let countdownInterval;
+    let historyTotalAmount = 0;
+    let historyTotalOrders = 0;
+    
+    // متغير للتحكم في الإشعارات الصوتية
     let isNotificationPlaying = false;
     
+    // دالة تشغيل الإشعار الصوتي بدون تداخل
     function playNotificationSound() {
       if (!isNotificationPlaying) {
         isNotificationPlaying = true;
@@ -1105,7 +1133,7 @@
           .then(() => {
             setTimeout(() => {
               isNotificationPlaying = false;
-            }, 4000);
+            }, 4000); // 4 ثواني مدة الصوت
           })
           .catch(e => {
             console.log("Error playing notification:", e);
@@ -1114,121 +1142,117 @@
       }
     }
     
+    // دالة تشغيل صوت تغيير الحالة
     function playStatusChangeSound() {
       const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
       statusChangeSound.volume = 0.3;
       statusChangeSound.play().catch(e => console.log("Status sound error:", e));
     }
 
-    function updateTimeRemaining() {
-      const now = new Date();
-      const nextDay = new Date(now);
-      nextDay.setDate(nextDay.getDate() + 1);
-      nextDay.setHours(0, 0, 0, 0);
+    // دالة بدء عداد 24 ساعة
+    function startCountdown() {
+      let hours = 24;
+      let minutes = 0;
+      let seconds = 0;
       
-      const diff = nextDay - now;
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      // إيقاف العداد إذا كان يعمل بالفعل
+      if (countdownInterval) clearInterval(countdownInterval);
       
-      document.getElementById('time-remaining').textContent = 
-        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
-
-    function updateTransactionsCount(count) {
-      document.getElementById('transactions-count').textContent = count;
-    }
-
-    function setupPrintHistory() {
-      document.getElementById('print-history-btn').addEventListener('click', function() {
-        const printContent = `
-          <div dir="rtl" style="font-family: 'Tajawal', sans-serif; padding: 20px;">
-            <h2 style="text-align: center; color: #0F3460;">سجل الطلبيات - دار حسنا</h2>
-            <div style="margin: 20px 0; display: flex; justify-content: space-between;">
-              <div>التاريخ: ${new Date().toLocaleDateString('ar-AR')}</div>
-              <div>الوقت: ${new Date().toLocaleTimeString('ar-AR')}</div>
-            </div>
-            <div style="margin-bottom: 20px; background: #f5f7fa; padding: 10px; border-radius: 8px;">
-              <div>الوقت المتبقي: <strong>${document.getElementById('time-remaining').textContent}</strong></div>
-              <div>عدد المعاملات: <strong>${document.getElementById('transactions-count').textContent}</strong></div>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-              <thead>
-                <tr style="background-color: #0F3460; color: white;">
-                  <th style="padding: 10px; text-align: right;">الوقت</th>
-                  <th style="padding: 10px; text-align: right;">طاولة</th>
-                  <th style="padding: 10px; text-align: right;">الحالة</th>
-                  <th style="padding: 10px; text-align: right;">المجموع</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${Array.from(document.querySelectorAll('.history-card')).map(card => `
-                  <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px; text-align: right;">${card.querySelector('.history-time').textContent}</td>
-                    <td style="padding: 10px; text-align: right;">${card.querySelector('.history-table').textContent}</td>
-                    <td style="padding: 10px; text-align: right;">${card.querySelector('.history-status').textContent}</td>
-                    <td style="padding: 10px; text-align: right;">${card.querySelector('.history-total').textContent}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-        
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-          printWindow.print();
-        }, 500);
-      });
-    }
-
-    function saveOrdersState() {
-      const ordersState = {};
-      Object.keys(allOrders).forEach(key => {
-        ordersState[key] = {
-          status: allOrders[key].status,
-          timestamp: allOrders[key].timestamp
-        };
-      });
-      
-      return ordersStatusRef.set(ordersState)
-        .then(() => console.log("تم حفظ حالات الطلبات في Firebase"))
-        .catch(error => console.error("خطأ في حفظ الحالات:", error));
-    }
-
-    function loadOrdersState() {
-      return ordersStatusRef.once('value')
-        .then(snapshot => snapshot.val() || {})
-        .catch(error => {
-          console.error("خطأ في تحميل الحالات:", error);
-          return {};
-        });
-    }
-
-    function cleanupOldStatuses() {
-      const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-      
-      return ordersStatusRef.once('value').then(snapshot => {
-        const statuses = snapshot.val() || {};
-        const updatedStatuses = {};
-        
-        Object.keys(statuses).forEach(key => {
-          if (statuses[key].timestamp > twentyFourHoursAgo) {
-            updatedStatuses[key] = statuses[key];
+      // تحديث العداد كل ثانية
+      countdownInterval = setInterval(() => {
+        seconds--;
+        if (seconds < 0) {
+          seconds = 59;
+          minutes--;
+          if (minutes < 0) {
+            minutes = 59;
+            hours--;
+            if (hours < 0) {
+              // انتهى الوقت - حذف السجل
+              clearInterval(countdownInterval);
+              db.ref("history").remove()
+                .then(() => {
+                  console.log("تم حذف السجل تلقائياً بعد 24 ساعة");
+                  startCountdown(); // إعادة تشغيل العداد من جديد
+                });
+              return;
+            }
           }
-        });
+        }
         
-        return ordersStatusRef.set(updatedStatuses);
-      }).then(() => {
-        console.log("تم تنظيف الحالات القديمة");
-      }).catch(error => {
-        console.error("Error cleaning up statuses:", error);
-      });
+        // عرض الوقت المتبقي
+        const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('history-countdown').querySelector('span').textContent = timeString;
+      }, 1000);
     }
 
+    // دالة حساب إجمالي الطلبات والمبيعات في السجل
+    function calculateHistoryStats(historyData) {
+      historyTotalAmount = 0;
+      historyTotalOrders = 0;
+      
+      Object.values(historyData).forEach(order => {
+        historyTotalAmount += order.total || 0;
+        historyTotalOrders++;
+      });
+      
+      document.getElementById('history-total-amount').textContent = historyTotalAmount;
+      document.getElementById('history-total-orders').textContent = historyTotalOrders;
+    }
+
+    // دالة طباعة سجل الطلبيات
+    function printHistory() {
+      const printWindow = window.open('', '_blank');
+      const historyCards = document.querySelectorAll('.history-card');
+      
+      if (historyCards.length === 0) {
+        alert('لا توجد طلبات في السجل للطباعة');
+        return;
+      }
+      
+      let printContent = `
+        <!DOCTYPE html>
+        <html lang="ar" dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>سجل طلبيات دار حسنا</title>
+          <style>
+            body { font-family: 'Tajawal', sans-serif; padding: 20px; }
+            h1 { text-align: center; color: #0F3460; margin-bottom: 20px; }
+            .history-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+            .history-card-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+            .history-items { margin-bottom: 10px; }
+            .history-item { display: flex; justify-content: space-between; padding: 3px 0; }
+            .history-total { font-weight: bold; margin-top: 10px; }
+            .summary { margin-top: 30px; padding: 15px; background: #f5f7fa; border-radius: 8px; }
+          </style>
+        </head>
+        <body>
+          <h1>سجل طلبيات دار حسنا</h1>
+          <div>تاريخ الطباعة: ${new Date().toLocaleString('ar-AR')}</div>
+          <hr>
+      `;
+      
+      historyCards.forEach(card => {
+        printContent += card.outerHTML;
+      });
+      
+      printContent += `
+          <div class="summary">
+            <h3>ملخص السجل:</h3>
+            <div>عدد الطلبيات: ${historyTotalOrders}</div>
+            <div>إجمالي المبيعات: ${historyTotalAmount} درهم</div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
+    }
+
+    // Authentication functions
     function initAuth() {
       auth.onAuthStateChanged(function(user) {
         if (user) {
@@ -1287,6 +1311,9 @@
       document.getElementById('liveClock').innerHTML = `<span>${dateString}</span><span>${timeString}</span>`;
     }
 
+    setInterval(updateClock, 1000);
+    updateClock();
+
     function formatOrderTime(timestamp) {
       const now = new Date();
       const orderDate = new Date(timestamp);
@@ -1340,15 +1367,18 @@
     function filterOrders(status) {
       const allOrdersDivs = document.querySelectorAll('.order-card');
       
+      // إخفاء جميع الطلبات أولاً
       allOrdersDivs.forEach(div => {
         div.style.display = 'none';
       });
       
+      // عرض الطلبات التي تطابق الحالة المطلوبة
       const matchingOrders = document.querySelectorAll(`.order-card[data-status="${status}"]`);
       matchingOrders.forEach(div => {
         div.style.display = 'block';
       });
       
+      // تحديث أزرار التبويب
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.status === status) {
@@ -1356,6 +1386,7 @@
         }
       });
       
+      // إذا لم توجد طلبات، عرض حالة فارغة
       if (matchingOrders.length === 0) {
         ordersContainer.innerHTML = `
           <div class="empty-state">
@@ -1479,19 +1510,24 @@
         }, 30000);
       }
       
+      // تعديل مستمع تغيير الحالة ليشمل تحديث جميع العناصر
       div.querySelector('.status-select').addEventListener("change", function() {
         const newStatus = this.value;
         const key = this.dataset.key;
         
+        // تحديث Firebase أولاً
         db.ref("commandes/" + key).update({ 
           etat: newStatus,
           statut: newStatus
         }).then(() => {
+          // بعد التحديث الناجح في Firebase
           playStatusChangeSound();
           
+          // تحديث جميع عناصر هذه الطلبية في الواجهة
           document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
             card.dataset.status = newStatus;
             
+            // تحديث نص وعناصر الحالة
             let statusClass = '';
             let statusText = '';
             
@@ -1514,20 +1550,21 @@
                 break;
             }
             
+            // تحديث عنصر الحالة
             const statusElement = card.querySelector('.order-status');
             statusElement.className = `order-status ${statusClass}`;
             statusElement.textContent = statusText;
             
+            // تحديث القائمة المنسدلة لتكون متزامنة
             const selectElement = card.querySelector('.status-select');
             selectElement.value = newStatus;
             
+            // إضافة تأثير بسيط للإشارة للتغيير
             card.classList.add('status-changing');
             setTimeout(() => {
               card.classList.remove('status-changing');
             }, 1000);
           });
-          
-          return saveOrdersState();
         }).catch(error => {
           console.error("Error updating status:", error);
           alert("حدث خطأ أثناء تحديث الحالة. يرجى المحاولة مرة أخرى.");
@@ -1598,9 +1635,10 @@
     }
     
     function manageNewOrders(key, data) {
-      const isNew = Date.now() - data.timestamp < 5 * 60 * 1000;
+      const isNew = Date.now() - data.timestamp < 5 * 60 * 1000; // 5 دقائق
       
       if (isNew) {
+        // تأكد من أن الطلبية محددة كـ "في الانتظار"
         if (data.etat !== "En attente" || data.statut !== "En attente") {
           db.ref("commandes/" + key).update({ 
             etat: "En attente",
@@ -1614,14 +1652,17 @@
         const orderElement = createOrderElement(key, data, true);
         newOrdersContainer.prepend(orderElement);
         
+        // إظهار قسم الطلبيات الجديدة إذا كان مخفياً
         newOrdersSection.style.display = 'block';
         
+        // نقل الطلبية بعد 5 دقائق إلى القائمة الرئيسية
         setTimeout(() => {
           if (newOrders[key]) {
             delete newOrders[key];
             const element = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
             if (element) element.remove();
             
+            // إخفاء قسم الطلبيات الجديدة إذا لم يعد هناك طلبيات جديدة
             if (Object.keys(newOrders).length === 0) {
               newOrdersSection.style.display = 'none';
             }
@@ -1638,7 +1679,7 @@
         .filter(([key, order]) => order.timestamp >= twentyFourHoursAgo)
         .sort((a, b) => b[1].timestamp - a[1].timestamp);
       
-      updateTransactionsCount(recentHistory.length);
+      calculateHistoryStats(historyData);
       
       if (recentHistory.length === 0) {
         historyContainer.innerHTML = `
@@ -1657,140 +1698,141 @@
         const historyElement = createHistoryElement(key, order);
         historyContainer.appendChild(historyElement);
       });
+      
+      // إعادة حساب الإحصائيات بعد التحميل
+      calculateHistoryStats(historyData);
     }
     
     function initFirebaseListeners() {
       resetStatusCounters();
       newOrdersSection.style.display = 'none';
 
-      loadOrdersState().then(savedState => {
-        db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
-          const data = snapshot.val();
-          const key = snapshot.key;
+      db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
+        const data = snapshot.val();
+        const key = snapshot.key;
+        
+        let currentStatus = data.etat || data.statut || "En attente";
+        if (currentStatus === "Livré") currentStatus = "Sortie";
+        
+        // تأكيد أن الطلب له حالة صحيحة
+        if (!data.etat || !data.statut || currentStatus === "Livré") {
+          db.ref("commandes/" + key).update({ 
+            etat: "En attente",
+            statut: "En attente"
+          });
+          data.etat = "En attente";
+          data.statut = "En attente";
+          currentStatus = "En attente";
+        }
+        
+        if (!allOrders[key]) {
+          statusCount[currentStatus]++;
+          statusCount['total']++;
+          updateStatusCounters();
+        }
+        
+        allOrders[key] = { ...data, status: currentStatus };
+        const orderElement = createOrderElement(key, data);
+        
+        const emptyState = document.querySelector('#orders-container .empty-state');
+        if (emptyState) {
+          ordersContainer.innerHTML = '';
+        }
+        
+        ordersContainer.prepend(orderElement);
+        
+        // إدارة الطلبيات الجديدة
+        manageNewOrders(key, data);
+        
+        // تصفية الطلبات تلقائياً حسب التبويب النشط
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab && activeTab.dataset.status !== currentStatus) {
+          orderElement.style.display = 'none';
+        }
+      });
+      
+      db.ref("commandes").on("child_changed", (snapshot) => {
+        const data = snapshot.val();
+        const key = snapshot.key;
+        let currentStatus = data.etat || data.statut;
+        
+        if (currentStatus === "Livré") {
+          currentStatus = "Sortie";
+          db.ref("commandes/" + key).update({ 
+            etat: "Sortie",
+            statut: "Sortie"
+          });
+        }
+        
+        if (allOrders[key] && allOrders[key].status !== currentStatus && currentStatus === "Sortie") {
+          ordersHistory[key] = { ...data, status: currentStatus };
+          db.ref("history/" + key).set(data);
+        }
+        
+        if (allOrders[key] && allOrders[key].status !== currentStatus) {
+          statusCount[allOrders[key].status]--;
+          statusCount[currentStatus]++;
+          updateStatusCounters();
+          allOrders[key].status = currentStatus;
+        }
+        
+        // تحديث جميع عناصر هذه الطلبية في الواجهة
+        document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
+          const newElement = createOrderElement(key, data, card.parentElement.id === 'new-orders-container');
+          card.replaceWith(newElement);
           
-          let currentStatus = data.etat || data.statut || "En attente";
-          if (currentStatus === "Livré") currentStatus = "Sortie";
-          
-          if (savedState && savedState[key]) {
-            currentStatus = savedState[key].status;
-            db.ref("commandes/" + key).update({ 
-              etat: currentStatus,
-              statut: currentStatus
-            });
-          }
-          
-          if (!allOrders[key]) {
-            statusCount[currentStatus]++;
-            statusCount['total']++;
-            updateStatusCounters();
-          }
-          
-          allOrders[key] = { ...data, status: currentStatus };
-          const orderElement = createOrderElement(key, data);
-          
-          const emptyState = document.querySelector('#orders-container .empty-state');
-          if (emptyState) {
-            ordersContainer.innerHTML = '';
-          }
-          
-          ordersContainer.prepend(orderElement);
-          manageNewOrders(key, data);
-          
+          // تصفية الطلبات تلقائياً حسب التبويب النشط
           const activeTab = document.querySelector('.tab-btn.active');
           if (activeTab && activeTab.dataset.status !== currentStatus) {
-            orderElement.style.display = 'none';
+            newElement.style.display = 'none';
           }
-          
-          saveOrdersState();
-        });
-
-        db.ref("commandes").on("child_changed", (snapshot) => {
-          const data = snapshot.val();
-          const key = snapshot.key;
-          let currentStatus = data.etat || data.statut;
-          
-          if (currentStatus === "Livré") {
-            currentStatus = "Sortie";
-            db.ref("commandes/" + key).update({ 
-              etat: "Sortie",
-              statut: "Sortie"
-            });
-          }
-          
-          if (allOrders[key] && allOrders[key].status !== currentStatus && currentStatus === "Sortie") {
-            ordersHistory[key] = { ...data, status: currentStatus };
-            db.ref("history/" + key).set(data);
-          }
-          
-          if (allOrders[key] && allOrders[key].status !== currentStatus) {
-            statusCount[allOrders[key].status]--;
-            statusCount[currentStatus]++;
-            updateStatusCounters();
-            allOrders[key].status = currentStatus;
-          }
-          
-          document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
-            const newElement = createOrderElement(key, data, card.parentElement.id === 'new-orders-container');
-            card.replaceWith(newElement);
-            
-            const activeTab = document.querySelector('.tab-btn.active');
-            if (activeTab && activeTab.dataset.status !== currentStatus) {
-              newElement.style.display = 'none';
-            }
-          });
-
-          saveOrdersState();
-        });
-
-        db.ref("commandes").on("child_removed", (snapshot) => {
-          const key = snapshot.key;
-          if (allOrders[key]) {
-            statusCount[allOrders[key].status]--;
-            statusCount['total']--;
-            updateStatusCounters();
-            delete allOrders[key];
-          }
-          
-          if (newOrders[key]) {
-            delete newOrders[key];
-            const newOrderElement = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
-            if (newOrderElement) newOrderElement.remove();
-            
-            if (Object.keys(newOrders).length === 0) {
-              newOrdersSection.style.display = 'none';
-            }
-          }
-          
-          const orderElement = document.querySelector(`.order-card[data-key="${key}"]`);
-          if (orderElement) {
-            orderElement.remove();
-          }
-          
-          if (Object.keys(allOrders).length === 0) {
-            ordersContainer.innerHTML = `
-              <div class="empty-state">
-                <div class="empty-icon">
-                  <i class="fas fa-clipboard-list"></i>
-                </div>
-                <h3>لا توجد طلبات حالياً</h3>
-                <p class="empty-text">سيظهر هنا أي طلبات جديدة يتم تقديمها</p>
-                <button class="btn btn-primary">
-                  <i class="fas fa-sync-alt"></i> تحديث
-                </button>
-              </div>
-            `;
-          }
-
-          saveOrdersState();
         });
       });
-
+      
+      db.ref("commandes").on("child_removed", (snapshot) => {
+        const key = snapshot.key;
+        if (allOrders[key]) {
+          statusCount[allOrders[key].status]--;
+          statusCount['total']--;
+          updateStatusCounters();
+          delete allOrders[key];
+        }
+        
+        if (newOrders[key]) {
+          delete newOrders[key];
+          const newOrderElement = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
+          if (newOrderElement) newOrderElement.remove();
+          
+          if (Object.keys(newOrders).length === 0) {
+            newOrdersSection.style.display = 'none';
+          }
+        }
+        
+        const orderElement = document.querySelector(`.order-card[data-key="${key}"]`);
+        if (orderElement) {
+          orderElement.remove();
+        }
+        
+        if (Object.keys(allOrders).length === 0) {
+          ordersContainer.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">
+                <i class="fas fa-clipboard-list"></i>
+              </div>
+              <h3>لا توجد طلبات حالياً</h3>
+              <p class="empty-text">سيظهر هنا أي طلبات جديدة يتم تقديمها</p>
+              <button class="btn btn-primary">
+                <i class="fas fa-sync-alt"></i> تحديث
+              </button>
+            </div>
+          `;
+        }
+      });
+      
       db.ref("history").orderByChild("timestamp").limitToLast(50).on("value", (snapshot) => {
         const historyData = snapshot.val() || {};
         updateHistorySection(historyData);
       });
-
-      cleanupOldStatuses();
     }
     
     function initFilterTabs() {
@@ -1804,6 +1846,11 @@
     function initApp() {
       initFirebaseListeners();
       initFilterTabs();
+      
+      // بدء عداد 24 ساعة
+      startCountdown();
+      
+      // تصفية الطلبات بحالة "في الانتظار" عند التحميل
       filterOrders('En attente');
       
       document.getElementById('print-btn').addEventListener('click', () => {
@@ -1819,9 +1866,7 @@
       });
       
       document.getElementById('logout-btn').addEventListener('click', function() {
-        saveOrdersState().then(() => {
-          auth.signOut();
-        });
+        auth.signOut();
       });
       
       document.getElementById('clear-history-btn').addEventListener('click', function() {
@@ -1832,11 +1877,8 @@
         }
       });
       
-      setInterval(updateClock, 1000);
-      updateClock();
-      setInterval(updateTimeRemaining, 1000);
-      updateTimeRemaining();
-      setupPrintHistory();
+      // حدث طباعة السجل
+      document.getElementById('print-history-btn').addEventListener('click', printHistory);
       
       document.addEventListener('click', (e) => {
         if (e.target.closest('.empty-state .btn-primary')) {
