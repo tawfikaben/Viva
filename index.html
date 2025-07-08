@@ -1317,14 +1317,65 @@
         }, 30000);
       }
       
+      // تعديل مستمع تغيير الحالة ليشمل تحديث جميع العناصر
       div.querySelector('.status-select').addEventListener("change", function() {
         const newStatus = this.value;
+        const key = this.dataset.key;
+        
+        // تحديث Firebase أولاً
         db.ref("commandes/" + key).update({ 
           etat: newStatus,
           statut: newStatus
+        }).then(() => {
+          // بعد التحديث الناجح في Firebase
+          playStatusChangeSound();
+          
+          // تحديث جميع عناصر هذه الطلبية في الواجهة
+          document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
+            card.dataset.status = newStatus;
+            
+            // تحديث نص وعناصر الحالة
+            let statusClass = '';
+            let statusText = '';
+            
+            switch(newStatus) {
+              case 'En attente':
+                statusClass = 'status-pending';
+                statusText = 'في الانتظار';
+                break;
+              case 'En préparation':
+                statusClass = 'status-preparing';
+                statusText = 'قيد التحضير';
+                break;
+              case 'Prêt':
+                statusClass = 'status-ready';
+                statusText = 'جاهزة';
+                break;
+              case 'Sortie':
+                statusClass = 'status-delivered';
+                statusText = 'تم التسليم';
+                break;
+            }
+            
+            // تحديث عنصر الحالة
+            const statusElement = card.querySelector('.order-status');
+            statusElement.className = `order-status ${statusClass}`;
+            statusElement.textContent = statusText;
+            
+            // تحديث القائمة المنسدلة لتكون متزامنة
+            const selectElement = card.querySelector('.status-select');
+            selectElement.value = newStatus;
+            
+            // إضافة تأثير بسيط للإشارة للتغيير
+            card.classList.add('status-changing');
+            setTimeout(() => {
+              card.classList.remove('status-changing');
+            }, 1000);
+          });
+        }).catch(error => {
+          console.error("Error updating status:", error);
+          alert("حدث خطأ أثناء تحديث الحالة. يرجى المحاولة مرة أخرى.");
         });
-        
-        playStatusChangeSound();
       });
       
       div.querySelector('.action-btn.delete').addEventListener("click", function() {
@@ -1462,8 +1513,6 @@
         const data = snapshot.val();
         const key = snapshot.key;
         
-        console.log("طلب جديد:", key, data); // للتحقق من البيانات
-        
         let currentStatus = data.etat || data.statut || "En attente";
         if (currentStatus === "Livré") currentStatus = "Sortie";
         
@@ -1529,26 +1578,17 @@
           allOrders[key].status = currentStatus;
         }
         
-        const existingElement = document.querySelector(`.order-card[data-key="${key}"]`);
-        if (existingElement) {
-          const newElement = createOrderElement(key, data);
-          existingElement.replaceWith(newElement);
+        // تحديث جميع عناصر هذه الطلبية في الواجهة
+        document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
+          const newElement = createOrderElement(key, data, card.parentElement.id === 'new-orders-container');
+          card.replaceWith(newElement);
           
           // تصفية الطلبات تلقائياً حسب التبويب النشط
           const activeTab = document.querySelector('.tab-btn.active');
           if (activeTab && activeTab.dataset.status !== currentStatus) {
             newElement.style.display = 'none';
           }
-        }
-        
-        // تحديث الطلبيات الجديدة إذا كانت موجودة
-        if (newOrders[key]) {
-          const newOrderElement = document.querySelector(`#new-orders-container .order-card[data-key="${key}"]`);
-          if (newOrderElement) {
-            const updatedElement = createOrderElement(key, data, true);
-            newOrderElement.replaceWith(updatedElement);
-          }
-        }
+        });
       });
       
       db.ref("commandes").on("child_removed", (snapshot) => {
