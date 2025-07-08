@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة التحكم - دار حسنا</title>
+  <title>تتبع طلبيات دار حسنا</title>
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
   <!-- Font Awesome -->
@@ -52,18 +52,29 @@
       direction: rtl;
     }
 
-    /* Login Styles */
+    /* Login Styles مع خلفية الطاجين */
     #login-container {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(15, 52, 96, 0.9);
+      background: url('https://images.unsplash.com/photo-1603360946369-dc9bb6258143?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
+      background-size: cover;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
+    }
+    
+    #login-container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(15, 52, 96, 0.7);
     }
 
     .login-box {
@@ -73,6 +84,8 @@
       width: 100%;
       max-width: 400px;
       box-shadow: var(--shadow-lg);
+      position: relative;
+      z-index: 2;
     }
 
     .login-logo {
@@ -811,7 +824,7 @@
     <div class="header">
       <div class="header-title">
         <div class="logo">ح</div>
-        <h1>لوحة تحكم دار حسنا</h1>
+        <h1>تتبع طلبيات دار حسنا</h1>
       </div>
       <div class="header-actions">
         <div class="clock" id="liveClock"></div>
@@ -948,6 +961,8 @@
     const historyContainer = document.getElementById("history-container");
     
     let allOrders = {};
+    let ordersHistory = {};
+    const playedNotifications = new Set();
     const statusCount = {
       'En attente': 0,
       'En préparation': 0,
@@ -956,24 +971,33 @@
       'total': 0
     };
     
-    // Notification sounds
-    const notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
-    notificationSound.loop = false;
-    const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
+    // متغير للتحكم في الإشعارات الصوتية
+    let isNotificationPlaying = false;
     
-    // Track played notifications
-    const playedNotifications = new Set();
-    
-    function initAudioContext() {
-      document.addEventListener('click', function() {
+    // دالة تشغيل الإشعار الصوتي بدون تداخل
+    function playNotificationSound() {
+      if (!isNotificationPlaying) {
+        isNotificationPlaying = true;
+        const notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
         notificationSound.volume = 0.3;
-        statusChangeSound.volume = 0.3;
-        notificationSound.play().then(() => {
-          notificationSound.pause();
-          notificationSound.currentTime = 0;
-        });
-        document.removeEventListener('click', arguments.callee);
-      }, { once: true });
+        notificationSound.play()
+          .then(() => {
+            setTimeout(() => {
+              isNotificationPlaying = false;
+            }, 4000); // 4 ثواني مدة الصوت
+          })
+          .catch(e => {
+            console.log("Error playing notification:", e);
+            isNotificationPlaying = false;
+          });
+      }
+    }
+    
+    // دالة تشغيل صوت تغيير الحالة
+    function playStatusChangeSound() {
+      const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
+      statusChangeSound.volume = 0.3;
+      statusChangeSound.play().catch(e => console.log("Status sound error:", e));
     }
 
     // Authentication functions
@@ -1074,20 +1098,53 @@
       updateStatusCounters();
     }
     
+    function getStatusText(status) {
+      switch(status) {
+        case 'En attente': return 'في الانتظار';
+        case 'En préparation': return 'قيد التحضير';
+        case 'Prêt': return 'جاهزة';
+        case 'Sortie': return 'تم التسليم';
+        default: return '';
+      }
+    }
+    
     function filterOrders(status) {
       const allOrdersDivs = document.querySelectorAll('.order-card');
       
+      // إخفاء جميع الطلبات أولاً
       allOrdersDivs.forEach(div => {
-        const orderStatus = div.dataset.status;
-        div.style.display = orderStatus === status ? 'block' : 'none';
+        div.style.display = 'none';
       });
       
+      // عرض الطلبات التي تطابق الحالة المطلوبة
+      const matchingOrders = document.querySelectorAll(`.order-card[data-status="${status}"]`);
+      matchingOrders.forEach(div => {
+        div.style.display = 'block';
+      });
+      
+      // تحديث أزرار التبويب
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.status === status) {
           btn.classList.add('active');
         }
       });
+      
+      // إذا لم توجد طلبات، عرض حالة فارغة
+      if (matchingOrders.length === 0) {
+        ordersContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <i class="fas fa-clipboard-list"></i>
+            </div>
+            <h3>لا توجد طلبات ${getStatusText(status)}</h3>
+            <p class="empty-text">سيظهر هنا أي طلبات جديدة</p>
+            <button class="btn btn-primary">
+              <i class="fas fa-sync-alt"></i> تحديث
+            </button>
+          </div>
+        `;
+      }
     }
     
     function createOrderElement(key, data) {
@@ -1184,8 +1241,7 @@
         badge.innerHTML = '<i class="fas fa-bell"></i>';
         div.querySelector('.order-header').appendChild(badge);
         
-        notificationSound.currentTime = 0;
-        notificationSound.play().catch(e => console.log("Notification error:", e));
+        playNotificationSound();
         playedNotifications.add(key);
         
         setTimeout(() => {
@@ -1201,8 +1257,7 @@
           statut: newStatus
         });
         
-        statusChangeSound.currentTime = 0;
-        statusChangeSound.play().catch(e => console.log("Status sound error:", e));
+        playStatusChangeSound();
       });
       
       div.querySelector('.action-btn.delete').addEventListener("click", function() {
@@ -1298,23 +1353,25 @@
     function initFirebaseListeners() {
       resetStatusCounters();
 
-      // Listen for active orders
       db.ref("commandes").orderByChild("timestamp").limitToLast(50).on("child_added", (snapshot) => {
         const data = snapshot.val();
         const key = snapshot.key;
         
-        // Ensure new orders start with "En attente" status
-        if (!data.etat && !data.statut) {
+        console.log("طلب جديد:", key, data); // للتحقق من البيانات
+        
+        let currentStatus = data.etat || data.statut || "En attente";
+        if (currentStatus === "Livré") currentStatus = "Sortie";
+        
+        // تأكيد أن الطلب له حالة صحيحة
+        if (!data.etat || !data.statut || currentStatus === "Livré") {
           db.ref("commandes/" + key).update({ 
             etat: "En attente",
             statut: "En attente"
           });
           data.etat = "En attente";
           data.statut = "En attente";
+          currentStatus = "En attente";
         }
-        
-        let currentStatus = data.etat || data.statut || "En attente";
-        if (currentStatus === "Livré") currentStatus = "Sortie";
         
         if (!allOrders[key]) {
           statusCount[currentStatus]++;
@@ -1331,9 +1388,14 @@
         }
         
         ordersContainer.prepend(orderElement);
+        
+        // تصفية الطلبات تلقائياً حسب التبويب النشط
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab && activeTab.dataset.status !== currentStatus) {
+          orderElement.style.display = 'none';
+        }
       });
       
-      // Listen for order status changes
       db.ref("commandes").on("child_changed", (snapshot) => {
         const data = snapshot.val();
         const key = snapshot.key;
@@ -1347,11 +1409,9 @@
           });
         }
         
-        // When status changes to "Sortie", add to history
         if (allOrders[key] && allOrders[key].status !== currentStatus && currentStatus === "Sortie") {
-          db.ref("history/" + key).set(data)
-            .then(() => console.log("Order added to history"))
-            .catch(error => console.error("Error adding to history:", error));
+          ordersHistory[key] = { ...data, status: currentStatus };
+          db.ref("history/" + key).set(data);
         }
         
         if (allOrders[key] && allOrders[key].status !== currentStatus) {
@@ -1365,10 +1425,15 @@
         if (existingElement) {
           const newElement = createOrderElement(key, data);
           existingElement.replaceWith(newElement);
+          
+          // تصفية الطلبات تلقائياً حسب التبويب النشط
+          const activeTab = document.querySelector('.tab-btn.active');
+          if (activeTab && activeTab.dataset.status !== currentStatus) {
+            newElement.style.display = 'none';
+          }
         }
       });
       
-      // Listen for order deletions
       db.ref("commandes").on("child_removed", (snapshot) => {
         const key = snapshot.key;
         if (allOrders[key]) {
@@ -1399,7 +1464,6 @@
         }
       });
       
-      // Listen for history updates
       db.ref("history").orderByChild("timestamp").limitToLast(50).on("value", (snapshot) => {
         const historyData = snapshot.val() || {};
         updateHistorySection(historyData);
@@ -1415,9 +1479,11 @@
     }
     
     function initApp() {
-      initAudioContext();
       initFirebaseListeners();
       initFilterTabs();
+      
+      // تصفية الطلبات بحالة "في الانتظار" عند التحميل
+      filterOrders('En attente');
       
       document.getElementById('print-btn').addEventListener('click', () => {
         window.print();
@@ -1434,8 +1500,8 @@
       document.getElementById('clear-history-btn').addEventListener('click', function() {
         if (confirm("هل تريد حقاً مسح سجل الطلبيات بالكامل؟")) {
           db.ref("history").remove()
-            .then(() => console.log("History cleared"))
-            .catch(error => console.error("Error clearing history:", error));
+            .then(() => console.log("تم مسح السجل"))
+            .catch(error => console.error("خطأ في مسح السجل:", error));
         }
       });
       
@@ -1444,8 +1510,6 @@
           location.reload();
         }
       });
-      
-      document.querySelector('.tab-btn[data-status="En attente"]').click();
     }
     
     window.addEventListener('DOMContentLoaded', function() {
