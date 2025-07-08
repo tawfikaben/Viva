@@ -785,6 +785,37 @@
       margin-top: 5px;
     }
 
+    /* History Stats */
+    .history-stats {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: var(--white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      flex-wrap: wrap;
+    }
+
+    .history-counter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 15px;
+      background-color: var(--gray);
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+    }
+
+    .history-counter i {
+      color: var(--primary);
+    }
+
+    #print-history-btn {
+      margin-right: auto;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .header {
@@ -808,6 +839,16 @@
       
       .history-grid {
         grid-template-columns: 1fr;
+      }
+      
+      .history-stats {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      #print-history-btn {
+        margin-right: 0;
+        margin-top: 10px;
       }
     }
 
@@ -833,6 +874,11 @@
       .tab-btn {
         padding: 8px 12px;
         font-size: 0.8rem;
+      }
+      
+      .history-counter {
+        padding: 6px 10px;
+        font-size: 0.9rem;
       }
     }
   </style>
@@ -983,6 +1029,24 @@
           <i class="fas fa-trash"></i> مسح السجل
         </button>
       </div>
+      
+      <!-- History Stats Section -->
+      <div class="history-stats">
+        <div class="history-counter">
+          <i class="fas fa-clock"></i>
+          <span>الوقت المتبقي: </span>
+          <span id="time-remaining">24:00:00</span>
+        </div>
+        <div class="history-counter">
+          <i class="fas fa-receipt"></i>
+          <span>عدد المعاملات: </span>
+          <span id="transactions-count">0</span>
+        </div>
+        <button class="btn btn-outline" id="print-history-btn">
+          <i class="fas fa-print"></i> طباعة السجل
+        </button>
+      </div>
+      
       <div class="history-grid" id="history-container">
         <div class="empty-state">
           <div class="empty-icon">
@@ -1057,6 +1121,74 @@
       const statusChangeSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
       statusChangeSound.volume = 0.3;
       statusChangeSound.play().catch(e => console.log("Status sound error:", e));
+    }
+
+    // دالة لحساب الوقت المتبقي وتحديث العداد
+    function updateTimeRemaining() {
+      const now = new Date();
+      const nextDay = new Date(now);
+      nextDay.setDate(nextDay.getDate() + 1);
+      nextDay.setHours(0, 0, 0, 0); // منتصف الليل القادم
+      
+      const diff = nextDay - now;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      document.getElementById('time-remaining').textContent = 
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    // دالة لتحديث عدد المعاملات
+    function updateTransactionsCount(count) {
+      document.getElementById('transactions-count').textContent = count;
+    }
+
+    // دالة لطباعة السجل
+    function setupPrintHistory() {
+      document.getElementById('print-history-btn').addEventListener('click', function() {
+        const printContent = `
+          <div dir="rtl" style="font-family: 'Tajawal', sans-serif; padding: 20px;">
+            <h2 style="text-align: center; color: #0F3460;">سجل الطلبيات - دار حسنا</h2>
+            <div style="margin: 20px 0; display: flex; justify-content: space-between;">
+              <div>التاريخ: ${new Date().toLocaleDateString('ar-AR')}</div>
+              <div>الوقت: ${new Date().toLocaleTimeString('ar-AR')}</div>
+            </div>
+            <div style="margin-bottom: 20px; background: #f5f7fa; padding: 10px; border-radius: 8px;">
+              <div>الوقت المتبقي: <strong>${document.getElementById('time-remaining').textContent}</strong></div>
+              <div>عدد المعاملات: <strong>${document.getElementById('transactions-count').textContent}</strong></div>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <thead>
+                <tr style="background-color: #0F3460; color: white;">
+                  <th style="padding: 10px; text-align: right;">الوقت</th>
+                  <th style="padding: 10px; text-align: right;">طاولة</th>
+                  <th style="padding: 10px; text-align: right;">الحالة</th>
+                  <th style="padding: 10px; text-align: right;">المجموع</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${Array.from(document.querySelectorAll('.history-card')).map(card => `
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; text-align: right;">${card.querySelector('.history-time').textContent}</td>
+                    <td style="padding: 10px; text-align: right;">${card.querySelector('.history-table').textContent}</td>
+                    <td style="padding: 10px; text-align: right;">${card.querySelector('.history-status').textContent}</td>
+                    <td style="padding: 10px; text-align: right;">${card.querySelector('.history-total').textContent}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      });
     }
 
     // Authentication functions
@@ -1486,6 +1618,9 @@
         .filter(([key, order]) => order.timestamp >= twentyFourHoursAgo)
         .sort((a, b) => b[1].timestamp - a[1].timestamp);
       
+      // تحديث عدد المعاملات
+      updateTransactionsCount(recentHistory.length);
+      
       if (recentHistory.length === 0) {
         historyContainer.innerHTML = `
           <div class="empty-state">
@@ -1675,6 +1810,13 @@
             .catch(error => console.error("خطأ في مسح السجل:", error));
         }
       });
+      
+      // تحديث العداد كل ثانية
+      setInterval(updateTimeRemaining, 1000);
+      updateTimeRemaining();
+
+      // إعداد زر طباعة السجل
+      setupPrintHistory();
       
       document.addEventListener('click', (e) => {
         if (e.target.closest('.empty-state .btn-primary')) {
