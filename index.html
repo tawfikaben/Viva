@@ -117,6 +117,7 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow: hidden;
+      margin-bottom: 2rem;
     }
 
     .orders-header {
@@ -321,6 +322,88 @@
       color: var(--text);
     }
 
+    /* الإشعارات */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      z-index: 2000;
+      transform: translateX(150%);
+      transition: var(--transition);
+    }
+
+    .notification.active {
+      transform: translateX(0);
+    }
+
+    .notification-icon {
+      margin-left: 0.8rem;
+      font-size: 1.5rem;
+    }
+
+    /* الإحصائيات */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card h3 {
+      margin-bottom: 1rem;
+      color: var(--dark);
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .stat-card h3 i {
+      margin-left: 0.5rem;
+      color: var(--primary);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-desc {
+      color: var(--text);
+      opacity: 0.8;
+      font-size: 0.9rem;
+    }
+
+    .top-items {
+      margin-top: 1rem;
+    }
+
+    .top-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--gray);
+    }
+
+    .top-item:last-child {
+      border-bottom: none;
+    }
+
     @media print {
       body * {
         visibility: hidden;
@@ -352,6 +435,10 @@
       .order-time {
         grid-column: 3 / 5;
       }
+      
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -364,6 +451,55 @@
   </header>
 
   <main class="container">
+    <!-- إشعار الطلبات الجديدة -->
+    <div class="notification" id="newOrderNotification">
+      <i class="fas fa-bell notification-icon"></i>
+      <div>
+        <strong>طلب جديد!</strong>
+        <p id="notificationText">تم استلام طلب جديد من الطاولة #12</p>
+      </div>
+    </div>
+
+    <!-- الإحصائيات -->
+    <div class="stats-container">
+      <div class="stat-card">
+        <h3><i class="fas fa-chart-line"></i> إجمالي المبيعات اليوم</h3>
+        <div class="stat-value" id="todaySales">0 درهم</div>
+        <div class="stat-desc">فقط الطلبات المستلمة (تم التسليم)</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3><i class="fas fa-utensils"></i> الأصناف الأكثر طلباً</h3>
+        <div class="top-items" id="topItems">
+          <div class="top-item">
+            <span>جاري تحميل البيانات...</span>
+            <span>0 طلب</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <h3><i class="fas fa-clipboard-list"></i> إحصائيات الطلبات</h3>
+        <div class="stat-value" id="ordersCount">0</div>
+        <div class="stat-desc">عدد الطلبات اليوم</div>
+        
+        <div class="top-items">
+          <div class="top-item">
+            <span>في الانتظار:</span>
+            <span id="pendingCount">0</span>
+          </div>
+          <div class="top-item">
+            <span>قيد التحضير:</span>
+            <span id="preparingCount">0</span>
+          </div>
+          <div class="top-item">
+            <span>جاهزة للتسليم:</span>
+            <span id="readyCount">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="controls">
       <div class="filter-group">
         <button class="filter-btn active" data-status="all">الكل</button>
@@ -439,7 +575,7 @@
       <thead>
         <tr style="background-color: #f2f2f2;">
           <th style="padding: 0.5rem; border: 1px solid #ddd;">رقم الطلب</th>
-          <th style="padding: 0.5rem; border: 1px solid #ddd;">الوقت</th>
+          <th style="padding: 0.5rem; border: 1px solid #ddd;">التاريخ والوقت</th>
           <th style="padding: 0.5rem; border: 1px solid #ddd;">الطاولة</th>
           <th style="padding: 0.5rem; border: 1px solid #ddd;">الحالة</th>
           <th style="padding: 0.5rem; border: 1px solid #ddd;">المجموع</th>
@@ -453,8 +589,19 @@
     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #333;">
       <p style="text-align: left; font-weight: bold;">إجمالي المبيعات اليوم: <span id="printTotalSales">0</span> درهم مغربي</p>
       <p style="text-align: left; font-weight: bold;">عدد الطلبات: <span id="printOrdersCount">0</span></p>
+      <p style="text-align: left; font-weight: bold;">الأصناف الأكثر طلباً:</p>
+      <ul id="printTopItems" style="margin-top: 0.5rem; padding-right: 1.5rem;">
+        <!-- سيتم تعبئة الأصناف الأكثر طلباً هنا -->
+      </ul>
     </div>
+    
+    <p style="text-align: left; margin-top: 2rem; font-size: 0.9rem;">
+      تم الطباعة في: <span id="printTime"></span>
+    </p>
   </div>
+
+  <!-- صوت الإشعار -->
+  <audio id="notificationSound" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" preload="auto"></audio>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -492,11 +639,23 @@
     const printTotalSales = document.getElementById('printTotalSales');
     const printOrdersCount = document.getElementById('printOrdersCount');
     const printDate = document.getElementById('printDate');
+    const printTime = document.getElementById('printTime');
+    const printTopItems = document.getElementById('printTopItems');
+    const notification = document.getElementById('newOrderNotification');
+    const notificationText = document.getElementById('notificationText');
+    const notificationSound = document.getElementById('notificationSound');
+    const todaySales = document.getElementById('todaySales');
+    const topItems = document.getElementById('topItems');
+    const ordersCount = document.getElementById('ordersCount');
+    const pendingCount = document.getElementById('pendingCount');
+    const preparingCount = document.getElementById('preparingCount');
+    const readyCount = document.getElementById('readyCount');
 
     // Variables
     let currentFilter = 'all';
     let ordersData = [];
     let currentOrderId = null;
+    let lastOrderId = null;
 
     // Status translations
     const statusTranslations = {
@@ -514,12 +673,15 @@
       'online': 'دفع إلكتروني'
     };
 
-    // Format date
-    function formatDate(timestamp) {
+    // Format date with day/month/year
+    function formatDateWithDay(timestamp) {
       const date = new Date(timestamp);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear().toString().slice(-2);
       const hours = date.getHours().toString().padStart(2, '0');
       const minutes = date.getMinutes().toString().padStart(2, '0');
-      return `${hours}:${minutes}`;
+      return `${day}/${month}/${year} - ${hours}:${minutes}`;
     }
 
     // Format date for printing
@@ -536,6 +698,82 @@
     // Format currency
     function formatCurrency(amount) {
       return new Intl.NumberFormat('ar-MA', { style: 'decimal' }).format(amount) + ' درهم';
+    }
+
+    // Show notification
+    function showNotification(order) {
+      notificationText.textContent = `تم استلام طلب جديد من الطاولة #${order.table}`;
+      notification.classList.add('active');
+      
+      // Play notification sound
+      notificationSound.play();
+      
+      // Hide after 5 seconds
+      setTimeout(() => {
+        notification.classList.remove('active');
+      }, 5000);
+    }
+
+    // Calculate statistics
+    function calculateStatistics(orders) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Filter today's orders
+      const todayOrders = orders.filter(order => {
+        const orderDate = new Date(order.timestamp);
+        return orderDate >= today;
+      });
+      
+      // Calculate total sales (only delivered orders)
+      const deliveredOrders = todayOrders.filter(order => order.statut === 'delivered');
+      const totalSales = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
+      todaySales.textContent = formatCurrency(totalSales);
+      
+      // Count orders by status
+      ordersCount.textContent = todayOrders.length;
+      pendingCount.textContent = todayOrders.filter(o => o.statut === 'pending').length;
+      preparingCount.textContent = todayOrders.filter(o => o.statut === 'preparing').length;
+      readyCount.textContent = todayOrders.filter(o => o.statut === 'ready').length;
+      
+      // Calculate top items
+      const itemsCount = {};
+      todayOrders.forEach(order => {
+        order.commandes.forEach(item => {
+          if (!itemsCount[item.plat]) {
+            itemsCount[item.plat] = 0;
+          }
+          itemsCount[item.plat] += item.quantite;
+        });
+      });
+      
+      // Convert to array and sort
+      const topItemsArray = Object.entries(itemsCount)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      
+      // Display top items
+      topItems.innerHTML = '';
+      if (topItemsArray.length === 0) {
+        topItems.innerHTML = '<div class="top-item"><span>لا توجد بيانات</span></div>';
+      } else {
+        topItemsArray.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'top-item';
+          div.innerHTML = `
+            <span>${item.name}</span>
+            <span>${item.count} طلب</span>
+          `;
+          topItems.appendChild(div);
+        });
+      }
+      
+      return {
+        todayOrders,
+        totalSales,
+        topItems: topItemsArray
+      };
     }
 
     // Load orders from Firebase
@@ -556,8 +794,23 @@
           }
         });
         
+        // Check for new orders
+        if (ordersData.length > 0) {
+          const latestOrder = ordersData[ordersData.length - 1];
+          if (lastOrderId !== latestOrder.id) {
+            if (lastOrderId !== null) {
+              showNotification(latestOrder);
+            }
+            lastOrderId = latestOrder.id;
+          }
+        }
+        
         // Reverse to show latest first
         ordersData.reverse();
+        
+        // Calculate statistics
+        const stats = calculateStatistics(ordersData);
+        
         renderOrders();
       });
     }
@@ -585,7 +838,7 @@
         orderRow.className = 'order-row';
         orderRow.innerHTML = `
           <div class="order-id">${order.id.substring(0, 6)}</div>
-          <div class="order-time">${formatDate(order.timestamp)}</div>
+          <div class="order-time">${formatDateWithDay(order.timestamp)}</div>
           <div class="order-table mobile-hide">${order.table}</div>
           <div class="order-status mobile-hide">
             <span class="status ${order.statut}">${statusTranslations[order.statut]}</span>
@@ -742,31 +995,40 @@
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const todayOrders = ordersData.filter(order => {
-        const orderDate = new Date(order.timestamp);
-        return orderDate >= today;
-      });
+      const stats = calculateStatistics(ordersData);
+      const todayOrders = stats.todayOrders;
+      const totalSales = stats.totalSales;
+      const topItems = stats.topItems;
       
-      printDate.textContent = `تاريخ الطباعة: ${today.toLocaleDateString('ar-MA')}`;
+      // Set print date and time
+      const now = new Date();
+      printDate.textContent = `تاريخ: ${now.toLocaleDateString('ar-MA')}`;
+      printTime.textContent = now.toLocaleTimeString('ar-MA');
+      
       printOrdersList.innerHTML = '';
-      
-      let totalSales = 0;
       
       todayOrders.forEach(order => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${order.id.substring(0, 6)}</td>
-          <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${formatDate(order.timestamp)}</td>
+          <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${formatDateForPrint(order.timestamp)}</td>
           <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${order.table}</td>
           <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${statusTranslations[order.statut]}</td>
           <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${formatCurrency(order.total)}</td>
         `;
         printOrdersList.appendChild(row);
-        totalSales += order.total;
       });
       
       printTotalSales.textContent = formatCurrency(totalSales);
       printOrdersCount.textContent = todayOrders.length;
+      
+      // Add top items to print
+      printTopItems.innerHTML = '';
+      topItems.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = `${item.name} (${item.count} طلب)`;
+        printTopItems.appendChild(li);
+      });
     }
 
     // Initialize
