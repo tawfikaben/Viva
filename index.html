@@ -880,6 +880,93 @@
       flex: 1;
     }
 
+    /* Notification System */
+    .notification-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      max-width: 350px;
+    }
+
+    .notification {
+      background-color: var(--white);
+      border-radius: var(--radius-md);
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-lg);
+      border-right: 4px solid var(--primary);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification-icon {
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .notification-content {
+      flex: 1;
+    }
+
+    .notification-title {
+      font-weight: 700;
+      margin-bottom: 5px;
+      color: var(--dark);
+    }
+
+    .notification-message {
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .notification-close {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .notification-success {
+      border-right-color: var(--success);
+    }
+
+    .notification-success .notification-icon {
+      color: var(--success);
+    }
+
+    .notification-warning {
+      border-right-color: var(--warning);
+    }
+
+    .notification-warning .notification-icon {
+      color: var(--warning);
+    }
+
+    .notification-danger {
+      border-right-color: var(--danger);
+    }
+
+    .notification-danger .notification-icon {
+      color: var(--danger);
+    }
+
+    .notification-info {
+      border-right-color: var(--info);
+    }
+
+    .notification-info .notification-icon {
+      color: var(--info);
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .header {
@@ -921,6 +1008,12 @@
         margin: 0;
         flex-grow: 1;
         text-align: center;
+      }
+
+      .notification-container {
+        max-width: 90%;
+        right: 5%;
+        bottom: 10px;
       }
     }
 
@@ -1159,6 +1252,9 @@
     </div>
   </div>
 
+  <!-- Notification Container -->
+  <div class="notification-container" id="notification-container"></div>
+
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -1181,6 +1277,7 @@
     const newOrdersContainer = document.getElementById("new-orders-container");
     const newOrdersSection = document.getElementById("new-orders-section");
     const historyContainer = document.getElementById("history-container");
+    const logsRef = db.ref("systemLogs");
     
     let allOrders = {};
     let newOrders = {};
@@ -1201,6 +1298,22 @@
     
     // متغير للتحكم في الإشعارات الصوتية
     let isNotificationPlaying = false;
+    
+    // دالة تسجيل الأحداث
+    function logAction(action, details = {}) {
+      if (!auth.currentUser) return;
+      
+      const logEntry = {
+        action,
+        details,
+        timestamp: Date.now(),
+        user: auth.currentUser.email,
+        userId: auth.currentUser.uid
+      };
+      
+      logsRef.push(logEntry)
+        .catch(error => console.error("Error saving log:", error));
+    }
     
     // دالة تشغيل الإشعار الصوتي بدون تداخل
     function playNotificationSound() {
@@ -1228,6 +1341,68 @@
       statusChangeSound.play().catch(e => console.log("Status sound error:", e));
     }
 
+    // نظام الإشعارات
+    function showNotification(title, message, type = 'info', duration = 5000) {
+      const container = document.getElementById('notification-container');
+      const types = {
+        'success': { icon: 'check-circle', class: 'notification-success' },
+        'warning': { icon: 'exclamation-triangle', class: 'notification-warning' },
+        'danger': { icon: 'times-circle', class: 'notification-danger' },
+        'info': { icon: 'info-circle', class: 'notification-info' }
+      };
+      
+      const notification = document.createElement('div');
+      notification.className = `notification ${types[type].class}`;
+      notification.innerHTML = `
+        <div class="notification-icon">
+          <i class="fas fa-${types[type].icon}"></i>
+        </div>
+        <div class="notification-content">
+          <div class="notification-title">${title}</div>
+          <div class="notification-message">${message}</div>
+        </div>
+        <button class="notification-close">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      
+      container.appendChild(notification);
+      
+      // Show notification
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 100);
+      
+      // Close button
+      notification.querySelector('.notification-close').addEventListener('click', () => {
+        closeNotification(notification);
+      });
+      
+      // Auto-close after duration
+      if (duration) {
+        setTimeout(() => {
+          closeNotification(notification);
+        }, duration);
+      }
+      
+      // Log the notification
+      logAction('notification', {
+        title,
+        message,
+        type,
+        duration
+      });
+      
+      return notification;
+    }
+
+    function closeNotification(notification) {
+      notification.classList.remove('show');
+      setTimeout(() => {
+        notification.remove();
+      }, 300);
+    }
+
     // دالة بدء عداد 24 ساعة
     function startCountdown() {
       let hours = 24;
@@ -1252,6 +1427,8 @@
               db.ref("history").remove()
                 .then(() => {
                   console.log("تم حذف السجل تلقائياً بعد 24 ساعة");
+                  showNotification('تحديث السجل', 'تم تحديث سجل الطلبيات تلقائياً', 'info');
+                  logAction('auto_history_clear');
                   startCountdown(); // إعادة تشغيل العداد من جديد
                 });
               return;
@@ -1285,7 +1462,7 @@
       const historyCards = document.querySelectorAll('.history-card');
       
       if (historyCards.length === 0) {
-        alert('لا توجد طلبات في السجل للطباعة');
+        showNotification('طباعة السجل', 'لا توجد طلبات في السجل للطباعة', 'warning');
         return;
       }
       
@@ -1329,6 +1506,11 @@
       printWindow.document.write(printContent);
       printWindow.document.close();
       setTimeout(() => printWindow.print(), 500);
+      
+      logAction('print_history', {
+        ordersCount: historyTotalOrders,
+        totalAmount: historyTotalAmount
+      });
     }
 
     // Authentication functions
@@ -1338,6 +1520,8 @@
           document.getElementById('login-container').style.display = 'none';
           document.getElementById('main-container').style.display = 'block';
           initApp();
+          showNotification('مرحباً بعودتك', 'تم تسجيل الدخول بنجاح', 'success');
+          logAction('user_relogin', { email: user.email });
         } else {
           document.getElementById('login-container').style.display = 'flex';
           document.getElementById('main-container').style.display = 'none';
@@ -1356,17 +1540,21 @@
         const password = document.getElementById('login-password').value;
         
         auth.signInWithEmailAndPassword(email, password)
-          .then(() => {
+          .then((userCredential) => {
             loginError.style.display = 'none';
+            showNotification('تم تسجيل الدخول', 'مرحباً بك في نظام تتبع الطلبيات', 'success');
+            logAction('user_login', { email: userCredential.user.email });
           })
           .catch((error) => {
             loginError.textContent = getAuthErrorMessage(error);
             loginError.style.display = 'block';
+            logAction('login_failed', { email, error: error.message });
           });
       });
 
       document.getElementById('menu-btn-login').addEventListener('click', function() {
         window.location.href = 'https://tawfikaben.github.io/Menu/';
+        logAction('menu_access_from_login');
       });
     }
 
@@ -1480,6 +1668,8 @@
           </div>
         `;
       }
+      
+      logAction('filter_orders', { status });
     }
     
     function createOrderElement(key, data, isNew = false) {
@@ -1593,6 +1783,7 @@
       div.querySelector('.status-select').addEventListener("change", function() {
         const newStatus = this.value;
         const key = this.dataset.key;
+        const tableNumber = data.table;
         
         // تحديث Firebase أولاً
         db.ref("commandes/" + key).update({ 
@@ -1601,6 +1792,13 @@
         }).then(() => {
           // بعد التحديث الناجح في Firebase
           playStatusChangeSound();
+          showNotification('تغيير الحالة', `تم تغيير حالة الطلب لطاولة ${tableNumber} إلى ${getStatusText(newStatus)}`, 'success');
+          logAction('status_change', {
+            orderId: key,
+            table: tableNumber,
+            oldStatus: allOrders[key].status,
+            newStatus
+          });
           
           // تحديث جميع عناصر هذه الطلبية في الواجهة
           document.querySelectorAll(`.order-card[data-key="${key}"]`).forEach(card => {
@@ -1646,13 +1844,34 @@
           });
         }).catch(error => {
           console.error("Error updating status:", error);
-          alert("حدث خطأ أثناء تحديث الحالة. يرجى المحاولة مرة أخرى.");
+          showNotification('خطأ', 'حدث خطأ أثناء تحديث الحالة', 'danger');
+          logAction('status_change_error', {
+            orderId: key,
+            error: error.message
+          });
         });
       });
       
       div.querySelector('.action-btn.delete').addEventListener("click", function() {
         if (confirm("هل تريد حقاً حذف هذه الطلبية؟")) {
-          db.ref("commandes/" + key).remove();
+          const orderData = allOrders[key];
+          db.ref("commandes/" + key).remove()
+            .then(() => {
+              showNotification('حذف الطلب', `تم حذف طلب طاولة ${orderData.table}`, 'warning');
+              logAction('order_deleted', {
+                orderId: key,
+                table: orderData.table,
+                status: orderData.status,
+                total: orderData.total
+              });
+            })
+            .catch(error => {
+              showNotification('خطأ', 'فشل في حذف الطلب', 'danger');
+              logAction('delete_order_error', {
+                orderId: key,
+                error: error.message
+              });
+            });
         }
       });
       
@@ -1828,6 +2047,15 @@
         if (activeTab && activeTab.dataset.status !== currentStatus) {
           orderElement.style.display = 'none';
         }
+        
+        // إشعار بطلب جديد
+        showNotification('طلب جديد', `تم إضافة طلب جديد لطاولة ${data.table}`, 'info');
+        logAction('new_order', {
+          orderId: key,
+          table: data.table,
+          total: data.total,
+          itemsCount: data.commandes.length
+        });
       });
       
       db.ref("commandes").on("child_changed", (snapshot) => {
@@ -1845,7 +2073,15 @@
         
         if (allOrders[key] && allOrders[key].status !== currentStatus && currentStatus === "Sortie") {
           ordersHistory[key] = { ...data, status: currentStatus };
-          db.ref("history/" + key).set(data);
+          db.ref("history/" + key).set(data)
+            .then(() => {
+              showNotification('اكتمال الطلب', `تم تسليم طلب طاولة ${data.table}`, 'success');
+              logAction('order_completed', {
+                orderId: key,
+                table: data.table,
+                total: data.total
+              });
+            });
         }
         
         if (allOrders[key] && allOrders[key].status !== currentStatus) {
@@ -1930,6 +2166,7 @@
       // إعداد أحداث الأزرار
       document.getElementById('cancel-reset-btn').onclick = function() {
         document.getElementById('confirm-reset-dialog').style.display = 'none';
+        logAction('reset_cancelled');
       };
       
       document.getElementById('confirm-reset-btn').onclick = function() {
@@ -1945,7 +2182,9 @@
             // مسح جميع الطلبيات والإحصائيات
             db.ref("commandes").remove()
               .then(() => {
-                console.log("تم مسح جميع الطلبيات");
+                showNotification('إعادة التشغيل', 'تم إعادة تشغيل النظام بنجاح', 'success');
+                logAction('system_reset', { user: userCredential.user.email });
+                
                 // إعادة تعيين العداد
                 resetStatusCounters();
                 // إخفاء قسم الطلبيات الجديدة
@@ -1965,13 +2204,14 @@
                 `;
               })
               .catch(error => {
-                console.error("Error resetting orders:", error);
-                alert("حدث خطأ أثناء إعادة التشغيل");
+                showNotification('خطأ', 'فشل في إعادة تشغيل النظام', 'danger');
+                logAction('reset_error', { error: error.message });
               });
           })
           .catch((error) => {
             document.getElementById('reset-error').textContent = getAuthErrorMessage(error);
             document.getElementById('reset-error').style.display = 'block';
+            logAction('reset_auth_failed', { error: error.message });
           });
       };
     }
@@ -1988,25 +2228,44 @@
       
       document.getElementById('print-btn').addEventListener('click', () => {
         window.print();
+        logAction('print_page');
       });
 
       document.getElementById('modification-btn').addEventListener('click', function() {
         window.open('https://tawfikaben.github.io/Modified-/', '_blank');
+        logAction('open_modification_page');
       });
       
       document.getElementById('menu-btn').addEventListener('click', function() {
         window.location.href = 'https://tawfikaben.github.io/Menu/';
+        logAction('open_menu_page');
       });
       
       document.getElementById('logout-btn').addEventListener('click', function() {
-        auth.signOut();
+        auth.signOut()
+          .then(() => {
+            showNotification('تسجيل الخروج', 'تم تسجيل الخروج بنجاح', 'info');
+            logAction('user_logout');
+          })
+          .catch(error => {
+            showNotification('خطأ', 'فشل في تسجيل الخروج', 'danger');
+            logAction('logout_error', { error: error.message });
+          });
       });
       
       document.getElementById('clear-history-btn').addEventListener('click', function() {
         if (confirm("هل تريد حقاً مسح سجل الطلبيات بالكامل؟")) {
           db.ref("history").remove()
-            .then(() => console.log("تم مسح السجل"))
-            .catch(error => console.error("خطأ في مسح السجل:", error));
+            .then(() => {
+              showNotification('مسح السجل', 'تم مسح سجل الطلبيات بنجاح', 'danger');
+              logAction('history_cleared');
+            })
+            .catch(error => {
+              showNotification('خطأ', 'فشل في مسح السجل', 'danger');
+              logAction('clear_history_error', { error: error.message });
+            });
+        } else {
+          logAction('clear_history_cancelled');
         }
       });
       
@@ -2019,6 +2278,7 @@
       document.addEventListener('click', (e) => {
         if (e.target.closest('.empty-state .btn-primary')) {
           location.reload();
+          logAction('refresh_page');
         }
       });
     }
