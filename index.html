@@ -404,6 +404,11 @@
       border-bottom: none;
     }
 
+    /* قسم الطباعة المخفي */
+    .print-section {
+      display: none;
+    }
+
     @media print {
       body * {
         visibility: hidden;
@@ -416,9 +421,24 @@
         left: 0;
         top: 0;
         width: 100%;
+        background: white;
+        padding: 20px;
       }
       .no-print {
         display: none !important;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+      }
+      th {
+        background-color: #f2f2f2;
       }
     }
 
@@ -517,7 +537,7 @@
     <div class="orders-container">
       <div class="orders-header">
         <div>رقم الطلب</div>
-        <div>الوقت</div>
+        <div>التاريخ والوقت</div>
         <div class="mobile-hide">الطاولة</div>
         <div class="mobile-hide">الحالة</div>
         <div class="mobile-hide">المجموع</div>
@@ -567,18 +587,18 @@
   </div>
 
   <!-- Print Section (hidden until printing) -->
-  <div id="printSection" class="print-section" style="display: none;">
+  <div id="printSection" class="print-section">
     <h2 style="text-align: center; margin: 1rem 0;">سجل الطلبيات اليومية - دار حسنا</h2>
     <p style="text-align: center; margin-bottom: 1rem;" id="printDate"></p>
     
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
+    <table>
       <thead>
-        <tr style="background-color: #f2f2f2;">
-          <th style="padding: 0.5rem; border: 1px solid #ddd;">رقم الطلب</th>
-          <th style="padding: 0.5rem; border: 1px solid #ddd;">التاريخ والوقت</th>
-          <th style="padding: 0.5rem; border: 1px solid #ddd;">الطاولة</th>
-          <th style="padding: 0.5rem; border: 1px solid #ddd;">الحالة</th>
-          <th style="padding: 0.5rem; border: 1px solid #ddd;">المجموع</th>
+        <tr>
+          <th>رقم الطلب</th>
+          <th>التاريخ والوقت</th>
+          <th>الطاولة</th>
+          <th>الحالة</th>
+          <th>المجموع</th>
         </tr>
       </thead>
       <tbody id="printOrdersList">
@@ -656,6 +676,7 @@
     let ordersData = [];
     let currentOrderId = null;
     let lastOrderId = null;
+    let isDataLoaded = false;
 
     // Status translations
     const statusTranslations = {
@@ -722,7 +743,7 @@
       // Filter today's orders
       const todayOrders = orders.filter(order => {
         const orderDate = new Date(order.timestamp);
-        return orderDate >= today;
+        return orderDate >= today && orderDate < new Date(today.getTime() + 86400000);
       });
       
       // Calculate total sales (only delivered orders)
@@ -776,42 +797,103 @@
       };
     }
 
-    // Load orders from Firebase
-    function loadOrders() {
-      database.ref('commandes').orderByChild('timestamp').on('value', (snapshot) => {
-        ordersData = [];
+    // Prepare print data
+    async function preparePrintData() {
+      try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        snapshot.forEach((childSnapshot) => {
-          const order = childSnapshot.val();
-          order.id = childSnapshot.key;
-          const orderDate = new Date(order.timestamp);
-          
-          // Filter orders from today
-          if (orderDate >= today) {
-            ordersData.push(order);
-          }
-        });
+        const stats = calculateStatistics(ordersData);
+        const todayOrders = stats.todayOrders;
         
-        // Check for new orders
-        if (ordersData.length > 0) {
-          const latestOrder = ordersData[ordersData.length - 1];
-          if (lastOrderId !== latestOrder.id) {
-            if (lastOrderId !== null) {
-              showNotification(latestOrder);
-            }
-            lastOrderId = latestOrder.id;
-          }
+        if (todayOrders.length === 0) {
+          alert("لا توجد طلبات اليوم للطباعة");
+          return false;
         }
         
-        // Reverse to show latest first
-        ordersData.reverse();
+        // Update print elements
+        printDate.textContent = `تاريخ: ${today.toLocaleDateString('ar-MA')}`;
+        printTime.textContent = new Date().toLocaleTimeString('ar-MA');
         
-        // Calculate statistics
-        const stats = calculateStatistics(ordersData);
+        printOrdersList.innerHTML = '';
+        todayOrders.forEach(order => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${order.id.substring(0, 6)}</td>
+            <td>${formatDateForPrint(order.timestamp)}</td>
+            <td>${order.table}</td>
+            <td>${statusTranslations[order.statut]}</td>
+            <td>${formatCurrency(order.total)}</td>
+          `;
+          printOrdersList.appendChild(row);
+        });
         
-        renderOrders();
+        printTotalSales.textContent = formatCurrency(stats.totalSales);
+        printOrdersCount.textContent = todayOrders.length;
+        
+        // Add top items to print
+        printTopItems.innerHTML = '';
+        stats.topItems.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = `${item.name} (${item.count} طلب)`;
+          printTopItems.appendChild(li);
+        });
+        
+        return true;
+      } catch (error) {
+        console.error("Error preparing print data:", error);
+        alert("حدث خطأ أثناء تحضير بيانات الطباعة");
+        return false;
+      }
+    }
+
+    // Load orders from Firebase
+    function loadOrders() {
+      ordersList.innerHTML = '<div class="loading">جاري تحميل البيانات...</div>';
+      
+      database.ref('commandes').orderByChild('timestamp').on('value', (snapshot) => {
+        try {
+          ordersData = [];
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          snapshot.forEach((childSnapshot) => {
+            const order = childSnapshot.val();
+            order.id = childSnapshot.key;
+            const orderDate = new Date(order.timestamp);
+            
+            // Filter orders from today
+            if (orderDate >= today) {
+              ordersData.push(order);
+            }
+          });
+          
+          // Check for new orders
+          if (ordersData.length > 0) {
+            const latestOrder = ordersData[ordersData.length - 1];
+            if (lastOrderId !== latestOrder.id) {
+              if (lastOrderId !== null) {
+                showNotification(latestOrder);
+              }
+              lastOrderId = latestOrder.id;
+            }
+          }
+          
+          // Reverse to show latest first
+          ordersData.reverse();
+          
+          // Calculate statistics
+          calculateStatistics(ordersData);
+          
+          renderOrders();
+          isDataLoaded = true;
+        } catch (error) {
+          console.error("Error loading orders:", error);
+          ordersList.innerHTML = '<div class="error">حدث خطأ في تحميل البيانات</div>';
+        }
+      }, (error) => {
+        console.error("Firebase error:", error);
+        ordersList.innerHTML = '<div class="error">فشل الاتصال بقاعدة البيانات</div>';
       });
     }
 
@@ -990,47 +1072,6 @@
       });
     }
 
-    // Prepare print data
-    function preparePrintData() {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const stats = calculateStatistics(ordersData);
-      const todayOrders = stats.todayOrders;
-      const totalSales = stats.totalSales;
-      const topItems = stats.topItems;
-      
-      // Set print date and time
-      const now = new Date();
-      printDate.textContent = `تاريخ: ${now.toLocaleDateString('ar-MA')}`;
-      printTime.textContent = now.toLocaleTimeString('ar-MA');
-      
-      printOrdersList.innerHTML = '';
-      
-      todayOrders.forEach(order => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${order.id.substring(0, 6)}</td>
-          <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${formatDateForPrint(order.timestamp)}</td>
-          <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${order.table}</td>
-          <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${statusTranslations[order.statut]}</td>
-          <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${formatCurrency(order.total)}</td>
-        `;
-        printOrdersList.appendChild(row);
-      });
-      
-      printTotalSales.textContent = formatCurrency(totalSales);
-      printOrdersCount.textContent = todayOrders.length;
-      
-      // Add top items to print
-      printTopItems.innerHTML = '';
-      topItems.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = `${item.name} (${item.count} طلب)`;
-        printTopItems.appendChild(li);
-      });
-    }
-
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       loadOrders();
@@ -1046,11 +1087,24 @@
       });
       
       // Print button
-      printBtn.addEventListener('click', () => {
-        preparePrintData();
+      printBtn.addEventListener('click', async () => {
+        if (!isDataLoaded) {
+          alert("البيانات قيد التحميل، يرجى الانتظار...");
+          return;
+        }
+        
         printSection.style.display = 'block';
-        window.print();
-        printSection.style.display = 'none';
+        const success = await preparePrintData();
+        
+        if (success) {
+          // تأخير بسيط لضمان عرض العناصر قبل الطباعة
+          setTimeout(() => {
+            window.print();
+            printSection.style.display = 'none';
+          }, 300);
+        } else {
+          printSection.style.display = 'none';
+        }
       });
       
       // Modal buttons
