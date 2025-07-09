@@ -112,6 +112,11 @@
       color: var(--dark);
     }
 
+    .action-btn.reset {
+      background: var(--primary);
+      color: var(--white);
+    }
+
     .orders-container {
       background: var(--white);
       border-radius: var(--radius);
@@ -404,42 +409,71 @@
       border-bottom: none;
     }
 
-    /* قسم الطباعة المخفي */
-    .print-section {
+    /* نافذة الطباعة */
+    .print-window {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      z-index: 2000;
+      padding: 2rem;
+      overflow-y: auto;
       display: none;
     }
 
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      .print-section, .print-section * {
-        visibility: visible;
-      }
-      .print-section {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: white;
-        padding: 20px;
-      }
-      .no-print {
-        display: none !important;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 1rem 0;
-      }
-      th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: center;
-      }
-      th {
-        background-color: #f2f2f2;
-      }
+    .print-window.active {
+      display: block;
+    }
+
+    .print-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .print-actions {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .print-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .close-print {
+      background: var(--dark);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+
+    .print-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+
+    .print-table th, .print-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .print-table th {
+      background-color: #f2f2f2;
     }
 
     @media (max-width: 768px) {
@@ -529,9 +563,14 @@
         <button class="filter-btn" data-status="delivered">تم التسليم</button>
         <button class="filter-btn" data-status="canceled">ملغاة</button>
       </div>
-      <button class="action-btn print no-print" id="printBtn">
-        <i class="fas fa-print"></i> طباعة سجل اليوم
-      </button>
+      <div class="filter-group">
+        <button class="action-btn print" id="printBtn">
+          <i class="fas fa-print"></i> طباعة السجل
+        </button>
+        <button class="action-btn reset" id="resetBtn">
+          <i class="fas fa-sync-alt"></i> إعادة الضبط
+        </button>
+      </div>
     </div>
 
     <div class="orders-container">
@@ -586,12 +625,23 @@
     </div>
   </div>
 
-  <!-- Print Section (hidden until printing) -->
-  <div id="printSection" class="print-section">
-    <h2 style="text-align: center; margin: 1rem 0;">سجل الطلبيات اليومية - دار حسنا</h2>
+  <!-- نافذة الطباعة -->
+  <div class="print-window" id="printWindow">
+    <div class="print-header">
+      <h2>سجل الطلبيات اليومية - دار حسنا</h2>
+      <div class="print-actions">
+        <button class="print-btn" id="doPrint">
+          <i class="fas fa-print"></i> طباعة
+        </button>
+        <button class="close-print" id="closePrint">
+          <i class="fas fa-times"></i> إغلاق
+        </button>
+      </div>
+    </div>
+    
     <p style="text-align: center; margin-bottom: 1rem;" id="printDate"></p>
     
-    <table>
+    <table class="print-table">
       <thead>
         <tr>
           <th>رقم الطلب</th>
@@ -646,6 +696,7 @@
     const ordersList = document.getElementById('ordersList');
     const filterButtons = document.querySelectorAll('.filter-btn');
     const printBtn = document.getElementById('printBtn');
+    const resetBtn = document.getElementById('resetBtn');
     const orderModal = document.getElementById('orderModal');
     const closeModalBtn = document.getElementById('closeModal');
     const cancelBtn = document.getElementById('cancelBtn');
@@ -654,13 +705,15 @@
     const orderNotes = document.getElementById('orderNotes');
     const orderDetailsContent = document.getElementById('orderDetailsContent');
     const modalTitle = document.getElementById('modalTitle');
-    const printSection = document.getElementById('printSection');
+    const printWindow = document.getElementById('printWindow');
     const printOrdersList = document.getElementById('printOrdersList');
     const printTotalSales = document.getElementById('printTotalSales');
     const printOrdersCount = document.getElementById('printOrdersCount');
     const printDate = document.getElementById('printDate');
     const printTime = document.getElementById('printTime');
     const printTopItems = document.getElementById('printTopItems');
+    const doPrint = document.getElementById('doPrint');
+    const closePrint = document.getElementById('closePrint');
     const notification = document.getElementById('newOrderNotification');
     const notificationText = document.getElementById('notificationText');
     const notificationSound = document.getElementById('notificationSound');
@@ -1093,17 +1146,33 @@
           return;
         }
         
-        printSection.style.display = 'block';
         const success = await preparePrintData();
-        
         if (success) {
-          // تأخير بسيط لضمان عرض العناصر قبل الطباعة
-          setTimeout(() => {
-            window.print();
-            printSection.style.display = 'none';
-          }, 300);
-        } else {
-          printSection.style.display = 'none';
+          printWindow.classList.add('active');
+        }
+      });
+      
+      // Print action
+      doPrint.addEventListener('click', () => {
+        window.print();
+      });
+      
+      // Close print window
+      closePrint.addEventListener('click', () => {
+        printWindow.classList.remove('active');
+      });
+      
+      // Reset button
+      resetBtn.addEventListener('click', () => {
+        if (confirm("هل أنت متأكد من إعادة ضبط البيانات؟")) {
+          loadOrders();
+          currentFilter = 'all';
+          filterButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-status') === 'all') {
+              btn.classList.add('active');
+            }
+          });
         }
       });
       
