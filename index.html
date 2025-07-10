@@ -800,24 +800,24 @@
       });
       
       // Calculate total sales (only delivered orders)
-      const deliveredOrders = todayOrders.filter(order => order.statut === 'delivered');
+      const deliveredOrders = todayOrders.filter(order => order.status === 'delivered');
       const totalSales = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
       todaySales.textContent = formatCurrency(totalSales);
       
       // Count orders by status
       ordersCount.textContent = todayOrders.length;
-      pendingCount.textContent = todayOrders.filter(o => o.statut === 'pending').length;
-      preparingCount.textContent = todayOrders.filter(o => o.statut === 'preparing').length;
-      readyCount.textContent = todayOrders.filter(o => o.statut === 'ready').length;
+      pendingCount.textContent = todayOrders.filter(o => o.status === 'pending').length;
+      preparingCount.textContent = todayOrders.filter(o => o.status === 'preparing').length;
+      readyCount.textContent = todayOrders.filter(o => o.status === 'ready').length;
       
       // Calculate top items
       const itemsCount = {};
       todayOrders.forEach(order => {
-        order.commandes.forEach(item => {
+        order.items.forEach(item => {
           if (!itemsCount[item.plat]) {
             itemsCount[item.plat] = 0;
           }
-          itemsCount[item.plat] += item.quantite;
+          itemsCount[item.plat] += item.quantity;
         });
       });
       
@@ -875,7 +875,7 @@
             <td>${order.id.substring(0, 6)}</td>
             <td>${formatDateForPrint(order.timestamp)}</td>
             <td>${order.table}</td>
-            <td>${statusTranslations[order.statut]}</td>
+            <td>${statusTranslations[order.status]}</td>
             <td>${formatCurrency(order.total)}</td>
           `;
           printOrdersList.appendChild(row);
@@ -904,7 +904,7 @@
     function loadOrders() {
       ordersList.innerHTML = '<div class="loading">جاري تحميل البيانات...</div>';
       
-      database.ref('commandes').orderByChild('timestamp').on('value', (snapshot) => {
+      database.ref('orders').orderByChild('timestamp').on('value', (snapshot) => {
         try {
           ordersData = [];
           const today = new Date();
@@ -966,7 +966,7 @@
       
       const filteredOrders = currentFilter === 'all' 
         ? ordersData 
-        : ordersData.filter(order => order.statut === currentFilter);
+        : ordersData.filter(order => order.status === currentFilter);
       
       filteredOrders.forEach(order => {
         const orderRow = document.createElement('div');
@@ -976,7 +976,7 @@
           <div class="order-time">${formatDateWithDay(order.timestamp)}</div>
           <div class="order-table mobile-hide">${order.table}</div>
           <div class="order-status mobile-hide">
-            <span class="status ${order.statut}">${statusTranslations[order.statut]}</span>
+            <span class="status ${order.status}">${statusTranslations[order.status]}</span>
           </div>
           <div class="order-total mobile-hide">${formatCurrency(order.total)}</div>
           <div class="order-payment mobile-hide">${paymentTranslations[order.payment] || 'غير محدد'}</div>
@@ -1011,15 +1011,15 @@
       if (!order) return;
       
       modalTitle.textContent = `تفاصيل الطلب #${order.id.substring(0, 6)}`;
-      orderStatus.value = order.statut;
+      orderStatus.value = order.status;
       orderNotes.value = order.notes || '';
       
       let itemsHtml = '';
-      order.commandes.forEach(item => {
+      order.items.forEach(item => {
         itemsHtml += `
           <div class="item-row">
-            <span>${item.quantite} x ${item.plat}</span>
-            <span>${formatCurrency(item.prix * item.quantite)}</span>
+            <span>${item.quantity} x ${item.plat}</span>
+            <span>${formatCurrency(item.prix * item.quantity)}</span>
           </div>
         `;
       });
@@ -1062,15 +1062,15 @@
       if (!order) return;
       
       modalTitle.textContent = `تعديل الطلب #${order.id.substring(0, 6)}`;
-      orderStatus.value = order.statut;
+      orderStatus.value = order.status;
       orderNotes.value = order.notes || '';
       
       let itemsHtml = '';
-      order.commandes.forEach(item => {
+      order.items.forEach(item => {
         itemsHtml += `
           <div class="item-row">
-            <span>${item.quantite} x ${item.plat}</span>
-            <span>${formatCurrency(item.prix * item.quantite)}</span>
+            <span>${item.quantity} x ${item.plat}</span>
+            <span>${formatCurrency(item.prix * item.quantity)}</span>
           </div>
         `;
       });
@@ -1114,8 +1114,8 @@
       const newStatus = orderStatus.value;
       const newNotes = orderNotes.value;
       
-      database.ref(`commandes/${currentOrderId}`).update({
-        statut: newStatus,
+      database.ref(`orders/${currentOrderId}`).update({
+        status: newStatus,
         notes: newNotes
       }).then(() => {
         // عرض إشعار "تم الحفظ" بدلاً من alert
