@@ -776,7 +776,7 @@
 
     // Show notification
     function showNotification(order) {
-      notificationText.textContent = `تم استلام طلب جديد من الطاولة #${order.table}`;
+      notificationText.innerHTML = `<strong>طلب جديد!</strong> تم استلام طلب جديد من الطاولة #${order.table}`;
       notification.classList.add('active');
       
       // Play notification sound
@@ -1118,10 +1118,23 @@
         statut: newStatus,
         notes: newNotes
       }).then(() => {
-        alert('تم تحديث الطلب بنجاح');
+        // عرض إشعار "تم الحفظ" بدلاً من alert
+        notificationText.innerHTML = '<strong>تم!</strong> تم حفظ التغييرات بنجاح';
+        notification.classList.add('active');
+        
+        // إخفاء الإشعار بعد 3 ثواني
+        setTimeout(() => {
+          notification.classList.remove('active');
+        }, 3000);
+        
         orderModal.classList.remove('active');
       }).catch(error => {
-        alert('حدث خطأ أثناء تحديث الطلب: ' + error.message);
+        notificationText.innerHTML = '<strong>خطأ!</strong> فشل في حفظ التغييرات';
+        notification.classList.add('active');
+        
+        setTimeout(() => {
+          notification.classList.remove('active');
+        }, 3000);
       });
     }
 
